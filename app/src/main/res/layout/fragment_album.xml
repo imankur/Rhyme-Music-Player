@@ -1,0 +1,19 @@
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    tools:context="mp.ajapps.musicplayerfree.Fragments.AlbumFragment">
+
+
+    <GridView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:numColumns="2"
+        android:drawSelectorOnTop="true"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior"
+        android:animationCache="false"
+        android:persistentDrawingCache="none"
+        android:stretchMode="columnWidth"
+        android:layout_gravity="right|center_vertical"
+        android:id="@+id/album_frag"></GridView>
+</FrameLayout>
