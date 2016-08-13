@@ -8,6 +8,7 @@ This Easy To Use Yet Powerful And Lag Free Music Player Gives You Fantastic Musi
 
 
 # Screenshots
+
 ![Phone](screenshot/5.png "Screenshot")
 ![Phone](screenshot/2.jpg "Screenshot")
 ![Phone](screenshot/1.png "Screenshot")
