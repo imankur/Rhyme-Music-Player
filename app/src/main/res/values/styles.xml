@@ -1,19 +1,18 @@
 <resources>
 
     <!-- Base application theme. -->
-    <style name="AppTheme" parent="Theme.AppCompat.NoActionBar">
+    <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
         <!-- Customize your theme here. -->
-        <item name="colorPrimary">#1e232e</item>
-        <item name="colorPrimaryDark">#11151d</item>
-        <item name="colorAccent">#26a69a</item>
+        <item name="colorPrimary">@color/primary</item>
+        <item name="colorPrimaryDark">@color/primary_dark</item>
+        <item name="colorAccent">@color/accent</item>
         <item name="windowActionModeOverlay">true</item>
-        <item name="android:actionModeBackground">@color/cool</item>
+        <item name="android:actionModeBackground">@color/primary_dark</item>
 
     </style>
 
 
-
-    <style name="AppThemeTrans" parent="Theme.AppCompat.NoActionBar">
+    <style name="AppThemeTrans" parent="Theme.AppCompat.Light.NoActionBar">
         <item name="android:actionBarStyle">@style/ThemeActionBar</item>
         <item name="android:windowTranslucentStatus">true</item>
         <item name="android:windowActionBarOverlay">true</item>
@@ -25,28 +24,31 @@
         <item name="windowNoTitle">true</item>
 
 
-
-
     </style>
-    <style name="ThemeActionBar"
-        parent="Widget.AppCompat.Light.ActionBar.Solid">
+
+    <style name="ThemeActionBar" parent="Widget.AppCompat.Light.ActionBar.Solid">
         <item name="android:background">@null</item>
         <!-- Support library compatibility -->
         <item name="background">@null</item>
     </style>
+
     <style name="CustomActionBar" parent="@style/ThemeOverlay.AppCompat.Dark.ActionBar">
         <item name="android:windowActionBarOverlay">true</item>
         <!-- Support library compatibility -->
         <item name="windowActionBarOverlay">true</item>
     </style>
+
     <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
+
     <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
 
     <style name="AppCompatAlertDialogStyle" parent="Theme.AppCompat.Light.Dialog.Alert">
 
-        <item name="android:titleTextColor">#1e232e</item>
+        <item name="android:titleTextColor">#404045</item>
         <item name="android:background">@android:color/white</item>
         <item name="android:padding">4dp</item>
 
     </style>
+
+
 </resources>

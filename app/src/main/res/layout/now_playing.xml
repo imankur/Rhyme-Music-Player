@@ -8,6 +8,8 @@
     android:padding="15dp"
     android:clickable="true" android:drawSelectorOnTop="true"
     android:layout_width="match_parent" android:layout_height="wrap_content">
+
+
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

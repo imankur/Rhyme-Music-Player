@@ -6,4 +6,5 @@
     <dimen name="text_margin">16dp</dimen>
     <dimen name="up_dimen">25dp</dimen>
     <dimen name="album_grid_height">180dp</dimen>
+    <dimen name="rounded">4px</dimen>
 </resources>

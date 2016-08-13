@@ -7,4 +7,5 @@
     <dimen name="textry">50dp</dimen>
     <dimen name="textry2">50dp</dimen>
     <dimen name="album_grid_height">180dp</dimen>
+    <dimen name="rounded">4px</dimen>
 </resources>

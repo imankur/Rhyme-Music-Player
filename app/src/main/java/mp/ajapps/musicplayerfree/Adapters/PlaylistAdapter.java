@@ -17,35 +17,29 @@ import mp.ajapps.musicplayerfree.R;
 
 public class PlaylistAdapter extends RecyclerView.Adapter<PlaylistAdapter.ViewHolder> {
     private List<Playlist> mPlaylistList = new ArrayList<Playlist>();
-    private SparseBooleanArray selectedItems;
+    private clickManger mManager;
 
-    public PlaylistAdapter() {
-        selectedItems = new SparseBooleanArray();
+    public PlaylistAdapter(clickManger manage) {
+        this.mManager = manage;
     }
 
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.fragment_playlist, parent, false);
-
         return new ViewHolder(view);
     }
 
     @Override
-    public void onBindViewHolder(final ViewHolder holder, int position) {
-        Playlist m = mPlaylistList.get(position);
+    public void onBindViewHolder(final ViewHolder holder, final int position) {
+        final Playlist m = mPlaylistList.get(position);
         holder.mContentView.setText(m.getmPlaylistName());
-        Log.i("ldit", "changeData: -" + mPlaylistList.size());
-        /*holder.mView.setOnClickListener(new View.OnClickListener() {
+        holder.mView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (null != mListener) {
-                    // Notify the active callbacks interface (the activity, if the
-                    // fragment is attached to one) that an item has been selected.
-                    mListener.onListFragmentInteraction(holder.mItem);
-                }
+                mManager.onCilckEvent(position, m.getmPlaylistId(), m.getmPlaylistName());
             }
-        });*/
+        });
     }
 
     @Override
@@ -58,33 +52,9 @@ public class PlaylistAdapter extends RecyclerView.Adapter<PlaylistAdapter.ViewHo
         notifyDataSetChanged();
     }
 
-    public void toggleSelection(int pos) {
-        if (selectedItems.get(pos, false)) {
-            selectedItems.delete(pos);
-        } else {
-            selectedItems.put(pos, true);
-        }
-        notifyItemChanged(pos);
+    public interface clickManger {
+        public void onCilckEvent(int position, long id, String mName);
     }
-
-    public void clearSelections() {
-        selectedItems.clear();
-        notifyDataSetChanged();
-    }
-
-    public int getSelectedItemCount() {
-        return selectedItems.size();
-    }
-
-    public List<Integer> getSelectedItems() {
-        List<Integer> items =
-                new ArrayList<Integer>(selectedItems.size());
-        for (int i = 0; i < selectedItems.size(); i++) {
-            items.add(selectedItems.keyAt(i));
-        }
-        return items;
-    }
-
     public class ViewHolder extends RecyclerView.ViewHolder {
         public final View mView;
         public final TextView mContentView;

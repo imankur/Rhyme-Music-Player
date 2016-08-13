@@ -1,9 +1,13 @@
 package mp.ajapps.musicplayerfree.Helpers;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.content.ContentResolver;
+import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.CursorLoader;
+import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -11,20 +15,26 @@ import android.os.Build;
 import android.os.RemoteException;
 import android.provider.BaseColumns;
 import android.provider.MediaStore;
+import android.provider.Settings;
 import android.text.TextUtils;
 import android.util.Log;
 import android.widget.Toast;
 import com.nostra13.universalimageloader.core.DisplayImageOptions;
 import com.nostra13.universalimageloader.core.ImageLoader;
 import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
+import com.nostra13.universalimageloader.core.display.FadeInBitmapDisplayer;
+
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Formatter;
 import java.util.Locale;
 import java.util.Random;
+import java.util.zip.CRC32;
 
 import mp.ajapps.musicplayerfree.IMusicParent;
 import mp.ajapps.musicplayerfree.POJOS.AlbumArtistDetails;
 import mp.ajapps.musicplayerfree.POJOS.SearchPojo;
+import mp.ajapps.musicplayerfree.POJOS.Song;
 import mp.ajapps.musicplayerfree.R;
 
 public class MusicUtils {
@@ -39,7 +49,9 @@ public class MusicUtils {
     private static ContentValues[] mContentValuesCache = null;
 
     public static void setAndPLay(long[] list, int pos) throws RemoteException {
+        Log.i("boom", "setAndPLay: " + list.length + "---=-" + pos);
         mService.setAndPlay(list, pos);
+
     }
 
     public static void setAndPlay(Cursor c, int pos) {
@@ -48,6 +60,105 @@ public class MusicUtils {
         } catch (RemoteException e) {
             e.printStackTrace();
         }
+    }
+
+    public static ArrayList<SearchPojo> getSongsListOfArtist(Context context, String artistName) {
+        ArrayList<SearchPojo> songList = new ArrayList<>();
+        System.gc();
+        final String where = MediaStore.Audio.Media.IS_MUSIC + "=1 AND "
+                + MediaStore.Audio.Media.ARTIST + "='" + artistName.replace("'", "''") + "'";
+        final String orderBy = MediaStore.Audio.Media.TITLE;
+        Cursor musicCursor = context.getContentResolver().query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                null, where, null, orderBy);
+        if (musicCursor != null && musicCursor.moveToFirst()) {
+            int titleColumn = musicCursor.getColumnIndex
+                    (android.provider.MediaStore.Audio.Media.TITLE);
+            int idColumn = musicCursor.getColumnIndex
+                    (android.provider.MediaStore.Audio.Media._ID);
+            int artistColumn = musicCursor.getColumnIndex
+                    (MediaStore.Audio.Media.ALBUM);
+            do {
+                songList.add(new SearchPojo(musicCursor.getString(titleColumn), musicCursor.getString(artistColumn), musicCursor.getLong(idColumn), null, 3));
+            }
+            while (musicCursor.moveToNext());
+        }
+        musicCursor.close();
+        return songList;
+    }
+
+    public static ArrayList<SearchPojo> searchSong(Context context, String sQuery) {
+        ArrayList<SearchPojo> songList = new ArrayList<>();
+        final String where = MediaStore.Audio.Media.IS_MUSIC + "=1 AND "
+                + MediaStore.Audio.Media.TITLE + " LIKE '%" + sQuery.replace("'", "''") + "%'";
+        final String orderBy = MediaStore.Audio.Media.TITLE;
+        Cursor musicCursor = context.getContentResolver().query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                null, where, null, orderBy);
+        if (musicCursor != null && musicCursor.moveToFirst() && musicCursor.getCount() > 0 ) {
+            int titleColumn = musicCursor.getColumnIndex
+                    (android.provider.MediaStore.Audio.Media.TITLE);
+            int idColumn = musicCursor.getColumnIndex
+                    (android.provider.MediaStore.Audio.Media._ID);
+            int artistColumn = musicCursor.getColumnIndex
+                    (android.provider.MediaStore.Audio.Media.ARTIST);
+            do {
+                songList.add(new SearchPojo(musicCursor.getString(titleColumn), musicCursor.getString(artistColumn), musicCursor.getLong(idColumn), null, 3));
+            }
+            while (musicCursor.moveToNext());
+        }
+        return songList;
+    }
+
+    public static ArrayList<SearchPojo> searchAlbum(Context context, String sQuery) {
+        ArrayList<SearchPojo> albumList = new ArrayList<>();
+        final String where = MediaStore.Audio.Albums.ALBUM + " LIKE '%" + sQuery.replace("'", "''") + "%'";
+        Cursor musicCursor = context.getContentResolver().
+                query(MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI, null, where, null, null);
+
+        if (musicCursor != null && musicCursor.moveToFirst() && musicCursor.getCount() > 0) {
+            //get columns
+            int titleColumn = musicCursor.getColumnIndex
+                    (android.provider.MediaStore.Audio.Albums.ALBUM);
+            int idColumn = musicCursor.getColumnIndex
+                    (android.provider.MediaStore.Audio.Albums._ID);
+            int artistColumn = musicCursor.getColumnIndex
+                    (android.provider.MediaStore.Audio.Albums.ARTIST);
+            int albumArtColumn = musicCursor.getColumnIndex
+                    (android.provider.MediaStore.Audio.Albums.ALBUM_ART);
+            //add albums to list
+            do {
+                albumList.add(new SearchPojo(musicCursor.getString(titleColumn), musicCursor.getString(artistColumn), musicCursor.getLong(idColumn), musicCursor.getString(albumArtColumn), 4));
+            }
+            while (musicCursor.moveToNext());
+        }
+        return albumList;
+    }
+
+    public static ArrayList<SearchPojo> getAlbumListOfArtist(Context context, long artistId) {
+        final ArrayList<SearchPojo> albumList = new ArrayList<>();
+        System.gc();
+        Cursor musicCursor = context.getContentResolver().
+                query(MediaStore.Audio.Artists.Albums.getContentUri("external", artistId),
+                        null, null, null, MediaStore.Audio.Albums.DEFAULT_SORT_ORDER);
+        if (musicCursor != null && musicCursor.moveToFirst()) {
+            //get columns
+            int titleColumn = musicCursor.getColumnIndex
+                    (android.provider.MediaStore.Audio.Artists.Albums.ALBUM);
+            int idColumn = musicCursor.getColumnIndex
+                    (MediaStore.Audio.Artists._ID);
+            int artistColumn = musicCursor.getColumnIndex
+                    (android.provider.MediaStore.Audio.Artists.Albums.ARTIST);
+            int numOfSongsColumn = musicCursor.getColumnIndex
+                    (MediaStore.Audio.Albums.NUMBER_OF_SONGS_FOR_ARTIST);
+            int albumArtColumn = musicCursor.getColumnIndex
+                    (android.provider.MediaStore.Audio.Albums.ALBUM_ART);
+            //add albums to list
+            do {
+                albumList.add(new SearchPojo(musicCursor.getString(titleColumn), musicCursor.getString(artistColumn), musicCursor.getLong(idColumn), musicCursor.getString(albumArtColumn), 4));
+            }
+            while (musicCursor.moveToNext());
+        }
+        musicCursor.close();
+        return albumList;
     }
 
     public static long getDuration() {
@@ -189,6 +300,7 @@ public class MusicUtils {
         DisplayImageOptions options;
         options = new DisplayImageOptions.Builder()
                 .cacheInMemory(true)
+                .showImageOnLoading(android.R.color.black)
                 .cacheOnDisk(true)
                 .build();
 
@@ -277,14 +389,14 @@ public class MusicUtils {
                 temp.setTitle(c.getString(c.getColumnIndex(MediaStore.Audio.Media.TITLE)));
                 temp.setArtist(c.getString(c.getColumnIndex(MediaStore.Audio.Artists.ARTIST)));
                 temp.setmType(3);
-                temp.setmId(c.getString(c.getColumnIndex(MediaStore.Audio.Media._ID)));
+               // temp.setmId(c.getString(c.getColumnIndex(MediaStore.Audio.Media._ID)));
                // temp.setAlbum_art(c.getString(c.getColumnIndex(MediaStore.Audio.Albums.ALBUM_ID)));
                 tracks.add(temp);
             } else if ("album".equals(type)) {
                 temp.setTitle(c.getString(c.getColumnIndex(MediaStore.Audio.Media.ALBUM)));
                 temp.setArtist(c.getString(c.getColumnIndex(MediaStore.Audio.Artists.ARTIST)));
                 temp.setmType(4);
-                temp.setmId(c.getString(c.getColumnIndex(MediaStore.Audio.Media._ID)));
+              //  temp.setmId(c.getString(c.getColumnIndex(MediaStore.Audio.Media._ID)));
               //  temp.setAlbum_art(c.getString(c.getColumnIndex(MediaStore.Audio.Albums.ALBUM_ID)));
                 album.add(temp);
             }
@@ -302,6 +414,19 @@ public class MusicUtils {
             swap(arr, i - 1, random.nextInt(i));
         }
         return arr;
+    }
+
+    public static String getAlbumArt(Context context, long albumdId) {
+        Cursor cursor = context.getContentResolver().query(MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI,
+                new String[]{MediaStore.Audio.Albums._ID, MediaStore.Audio.Albums.ALBUM_ART},
+                MediaStore.Audio.Albums._ID + "=?",
+                new String[]{String.valueOf(albumdId)},
+                null);
+        String imagePath = "";
+        if (cursor != null && cursor.moveToFirst()) {
+            imagePath = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Albums.ALBUM_ART));
+        }
+        return imagePath;
     }
 
     private static void swap(long[] array, int i, int j) {
@@ -328,6 +453,7 @@ public class MusicUtils {
     }
 
     public static void addToPlaylist(final Context context, final long[] ids, final long playlistid) {
+
         final int size = ids.length;
         final ContentResolver resolver = context.getContentResolver();
         final String[] projection = new String[]{
@@ -353,8 +479,10 @@ public class MusicUtils {
         for (int offSet = 0; offSet < size; offSet += 1000) {
             makeInsertItems(ids, offSet, 1000, base);
             numinserted += resolver.bulkInsert(uri, mContentValuesCache);
+            Log.i("+-------", "addToPlaylist: " + numinserted);
         }
-        Toast.makeText(context, numinserted + "Tracks Added", Toast.LENGTH_SHORT).show();
+        Toast.makeText(context, numinserted + " Tracks Added", Toast.LENGTH_SHORT).show();
+        context.sendBroadcast(new Intent().setAction("Playlist_Changed"));
     }
 
     public static void makeInsertItems(final long[] ids, final int offset, int len, final int base) {
@@ -373,4 +501,157 @@ public class MusicUtils {
             mContentValuesCache[i].put(MediaStore.Audio.Playlists.Members.AUDIO_ID, ids[offset + i]);
         }
     }
+    public static Cursor makeLastAddedCursor(final Context context) {
+        long fourWeeksAgo = (System.currentTimeMillis() / 1000) - (4 * 3600 * 24 * 7);
+        final StringBuilder selection = new StringBuilder();
+        selection.append(MediaStore.Audio.AudioColumns.IS_MUSIC + "=1");
+        selection.append(" AND " + MediaStore.Audio.AudioColumns.TITLE + " != ''"); //$NON-NLS-2$
+        selection.append(" AND " + MediaStore.Audio.Media.DATE_ADDED + ">"); //$NON-NLS-2$
+        selection.append(fourWeeksAgo);
+
+        return context.getContentResolver().query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                new String[] {
+                        /* 0 */
+                        BaseColumns._ID,
+                        /* 1 */
+                        MediaStore.Audio.AudioColumns.TITLE,
+                        /* 2 */
+                        MediaStore.Audio.AudioColumns.ARTIST,
+                        /* 3 */
+                        MediaStore.Audio.AudioColumns.ALBUM_ID,
+                        /* 4 */
+                        MediaStore.Audio.AudioColumns.ALBUM,
+                        /* 5 */
+                        MediaStore.Audio.AudioColumns.DURATION,
+                        /* 6 */
+                        MediaStore.Audio.AudioColumns.YEAR,
+                }, selection.toString(), null, MediaStore.Audio.Media.DATE_ADDED + " DESC");
+    }
+
+    public static void setRingtone(final Context context, final long id) {
+        final ContentResolver resolver = context.getContentResolver();
+        final Uri uri = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id);
+        try {
+            final ContentValues values = new ContentValues(2);
+            values.put(MediaStore.Audio.AudioColumns.IS_RINGTONE, "1");
+            values.put(MediaStore.Audio.AudioColumns.IS_ALARM, "1");
+            resolver.update(uri, values, null, null);
+        } catch (final UnsupportedOperationException ingored) {
+            return;
+        }
+
+        final String[] projection = new String[] {
+                BaseColumns._ID, MediaStore.MediaColumns.DATA, MediaStore.MediaColumns.TITLE
+        };
+
+        final String selection = BaseColumns._ID + "=" + id;
+        Cursor cursor = resolver.query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, projection,
+                selection, null, null);
+        try {
+            if (cursor != null && cursor.getCount() == 1) {
+                cursor.moveToFirst();
+                Settings.System.putString(resolver, Settings.System.RINGTONE, uri.toString());
+                final String message = "RingTone set : " +
+                        cursor.getString(2);
+                Toast.makeText((Activity)context, message, Toast.LENGTH_SHORT).show();
+            }
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+                cursor = null;
+            }
+        }
+    }
+
+    public static void deleteTracks(final Context context, final long list) {
+        final String[] projection = new String[] {
+                BaseColumns._ID, MediaStore.MediaColumns.DATA, MediaStore.Audio.AudioColumns.ALBUM_ID
+        };
+        final StringBuilder selection = new StringBuilder();
+        selection.append(BaseColumns._ID + " = ");
+            selection.append(list);
+        //selection.append(")");
+        final Cursor c = context.getContentResolver().query(
+                MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, projection, selection.toString(),
+                null, null);
+        if (c != null) {
+            context.getContentResolver().delete(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                    selection.toString(), null);
+
+            // Step 3: Remove files from card
+            c.moveToFirst();
+            while (!c.isAfterLast()) {
+                final String name = c.getString(1);
+                final File f = new File(name);
+                try { // File.delete can throw a security exception
+                    if (!f.delete()) {
+                    }
+                    c.moveToNext();
+                } catch (final SecurityException ex) {
+                    c.moveToNext();
+                }
+            }
+            c.close();
+        }
+
+        final String message = "Track Deleted";
+
+        Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
+        // We deleted a number of tracks, which could affect any number of
+        // things
+        // in the media content domain, so update everything.
+        context.getContentResolver().notifyChange(Uri.parse("content://media"), null);
+
+    }
+
+    public static void PlayPlaylist(long mPlaylistId, Context v) {
+        Cursor mCursor = getPlaylistTracks(mPlaylistId, v);
+        try {
+            setAndPLay(getSongListForCursor(mCursor), 0);
+            mCursor.close();
+            mCursor = null;
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static Cursor getPlaylistTracks (long playlistId, Context v) {
+        final StringBuilder mSelection = new StringBuilder();
+        mSelection.append(MediaStore.Audio.AudioColumns.IS_MUSIC + "=1");
+        mSelection.append(" AND " + MediaStore.Audio.AudioColumns.TITLE + " != ''"); //$NON-NLS-2$
+        return v.getContentResolver().query(
+                MediaStore.Audio.Playlists.Members.getContentUri("external", playlistId),
+                new String[] {
+                        /* 0 */
+                        MediaStore.Audio.Playlists.Members._ID,
+                        /* 1 */
+                        MediaStore.Audio.Playlists.Members.AUDIO_ID,
+                        /* 2 */
+                        MediaStore.Audio.AudioColumns.TITLE,
+                        /* 3 */
+                        MediaStore.Audio.AudioColumns.ARTIST,
+                        /* 4 */
+                        MediaStore.Audio.AudioColumns.ALBUM_ID,
+                        /* 5 */
+                        MediaStore.Audio.AudioColumns.ALBUM,
+                        /* 6 */
+                        MediaStore.Audio.AudioColumns.DURATION,
+                        /* 7 */
+                        MediaStore.Audio.AudioColumns.YEAR,
+                        /* 8 */
+                        MediaStore.Audio.Playlists.Members.PLAY_ORDER,
+                }, mSelection.toString(), null,
+                MediaStore.Audio.Playlists.Members.DEFAULT_SORT_ORDER);
+    }
+
+
+    public static void deletePlaylist(long mID, Context c) {
+        ContentResolver resolver = c.getContentResolver();
+        String where = MediaStore.Audio.Playlists._ID + "=" + mID;
+        resolver.delete(MediaStore.Audio.Playlists.EXTERNAL_CONTENT_URI, where, null);
+        Toast toast = Toast.makeText(c,  " Deleted", Toast.LENGTH_SHORT);
+        toast.show();
+        c.getContentResolver().notifyChange(Uri.parse("content://media"), null);
+    }
+
 }

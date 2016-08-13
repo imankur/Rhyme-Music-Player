@@ -36,7 +36,8 @@ interface IMusicParent {
        long[] getQueue();
        void moveQueueItem(int index1, int index2);
        void setAndPlayQueue(int pos);
-
+       int getShuffleMode();
+ int getRepeatMode();
 
        /*// long getIdFromPath(String path);
       //  int getQueuePosition();

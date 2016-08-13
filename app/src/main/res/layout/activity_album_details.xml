@@ -3,7 +3,6 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
-    android:background="#121214"
     android:layout_height="match_parent" android:fitsSystemWindows="true"
     tools:context="mp.ajapps.musicplayerfree.Activity.Album_Details">
 
@@ -30,7 +29,6 @@
                 android:layout_marginBottom="55dp"
                 android:src="@drawable/default_artwork"
                 android:minHeight="168dp"
-                android:transitionName="art"
                 app:layout_collapseMode="parallax"
                 android:id="@+id/image"
                 android:fitsSystemWindows="true"
@@ -41,9 +39,9 @@
                 android:gravity="center_vertical"
                 android:layout_marginTop="56dp"
                 android:layout_gravity="bottom"
-                android:background="@drawable/album_back"
+                android:background="#2c2c2c"
                 android:layout_height="56dp"
-                android:paddingLeft="50dp"
+                android:paddingLeft="56dp"
                 android:orientation="vertical">
                 <TextView
                     android:layout_width="wrap_content"
@@ -67,7 +65,7 @@
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            app:layout_scrollFlags="scroll|enterAlways"
+            android:background="@drawable/toolbar_gradient"
             app:layout_collapseMode="pin"
             app:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
             app:popupTheme="@style/ThemeOverlay.AppCompat.Light">

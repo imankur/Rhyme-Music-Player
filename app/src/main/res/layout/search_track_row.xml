@@ -13,14 +13,13 @@
     android:singleLine="true"
     android:textSize="16sp"
     android:text="New Text"
-    android:textColor="@android:color/white"
     android:id="@+id/textView" />
     <TextView
     android:layout_width="match_parent"
-    android:textSize="16sp"
+    android:textSize="15sp"
     android:layout_below="@+id/textView"
     android:layout_height="wrap_content"
-    android:textColor="@android:color/white"
+        android:textColor="#b4b4b5"
     android:singleLine="true"
     android:text="New Text"
         android:id="@+id/textView2" />

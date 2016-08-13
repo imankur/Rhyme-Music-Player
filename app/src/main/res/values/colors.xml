@@ -6,5 +6,19 @@
     <color name="light_gray_header_color">#a2a2a2</color>
 
 
-    <color name="cool">#333c4f</color>
+    <color name="cool">#2b3140</color>
+    <color name="select">#455a64</color>
+    <color name="textcolor">#f04f40</color>
+    <color name="primary">#34495e</color>
+    <color name="primary_dark">#2c3e50</color>
+    <color name="primary_light">#CFD8DC</color>
+    <color name="accent">#FF5252</color>
+    <color name="primary_text">#212121</color>
+    <color name="secondary_text">#727272</color>
+    <color name="icons">#FFFFFF</color>
+    <color name="divider">#B6B6B6</color>
+
+
+
+    <color name="textColorLight">#2d2d2d</color>
 </resources>

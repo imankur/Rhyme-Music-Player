@@ -15,9 +15,13 @@ import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.DisplayMetrics;
+import android.util.Log;
+import android.view.GestureDetector;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
@@ -25,20 +29,22 @@ import android.widget.Toast;
 
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdView;
+import com.nostra13.universalimageloader.core.ImageLoader;
+import com.nostra13.universalimageloader.core.listener.PauseOnScrollListener;
 
 import java.util.ArrayList;
 
 import mp.ajapps.musicplayerfree.Adapters.TrackPagerAdap;
 import mp.ajapps.musicplayerfree.Fragments.AlbumFragment;
+import mp.ajapps.musicplayerfree.Fragments.ArtistFragment;
 import mp.ajapps.musicplayerfree.Fragments.PlaylistFragment;
-import mp.ajapps.musicplayerfree.Fragments.RecentFragment;
+import mp.ajapps.musicplayerfree.Fragments.SuggestionFragment;
 import mp.ajapps.musicplayerfree.Fragments.TrackFragment;
 import mp.ajapps.musicplayerfree.Helpers.MusicUtils;
 import mp.ajapps.musicplayerfree.IMusicParent;
 import mp.ajapps.musicplayerfree.Play.Play_Activity;
 import mp.ajapps.musicplayerfree.R;
 import mp.ajapps.musicplayerfree.Services.IMusicChild;
-import mp.ajapps.musicplayerfree.Widgets.ListPlaylistDailog;
 import mp.ajapps.musicplayerfree.Widgets.NewPlaylistDialog;
 
 public class MainActivity extends AppCompatActivity implements ServiceConnection {
@@ -49,23 +55,35 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
     TextView mTrack, mArtist;
     ImageView im, mPlayim;
     Menu mMenu;
-
+    String TAG = "debuggggg----";
+    private GestureDetector gestureDetector;
     @Override
     protected void onStart() {
+        Log.i(TAG, "onStart: ");
         startService(new Intent(this, IMusicChild.class));
         Boolean b = bindService(new Intent(this, IMusicChild.class), this, 0);
         super.onStart();
     }
 
     @Override
+    public void onBackPressed() {
+        //super.onBackPressed();
+        Log.i(TAG, "onBackPressed: ");
+        moveTaskToBack(true);
+    }
+
+    @Override
     protected void onStop() {
-      //  unbindService(this);
+        Log.i(TAG, "onStop: ");
+        ImageLoader.getInstance().clearMemoryCache();
+        unbindService(this);
        // stopService(new Intent(this, IMusicChild.class));
+
         super.onStop();
     }
 
-    private String getDensityName(Context context) {
-        float density = context.getResources().getDisplayMetrics().density;
+    private void getDensityName(Context context) {
+     /*   float density = context.getResources().getDisplayMetrics().density;
         if (density >= 4.0) {
             return "xxxhdpi";
         }
@@ -81,21 +99,23 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
         if (density >= 1.0) {
             return "mdpi";
         }
-        return "ldpi";
+        return "ldpi";*/
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        Log.i(TAG, "onCreate: ");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         mPager = (ViewPager) findViewById(R.id.vpView);
         MusicUtils.initImageCacher(this);
         AdView mAdView = (AdView) findViewById(R.id.adView);
         AdRequest adRequest = new AdRequest.Builder().addTestDevice("7971949E9B14F3AB74918D51DB72B497").build();
-        mAdView.loadAd(adRequest);
-        Toast.makeText(this, "Screen density is : " + getDensityName(this) +"--"+ getResources().getDimension(R.dimen.up_dimen) , Toast.LENGTH_LONG).show();
+        //mAdView.loadAd(adRequest);
+       // Toast.makeText(this, "Screen density is : " + getDensityName(this) +"--"+ getResources().getDimension(R.dimen.up_dimen) , Toast.LENGTH_LONG).show();
         DisplayMetrics metrics = getResources().getDisplayMetrics();
         //  Log.i("dentis", "onCreate:  cff555fff " + metrics.heightPixels/metrics.density +"  "+ metrics.widthPixels/metrics.density +" " + metrics.densityDpi)  ;
+
         final Toolbar toolbar = (Toolbar) findViewById(R.id.my_toolbar_main);
         setSupportActionBar(toolbar);
         final TabLayout tabLayout = (TabLayout) findViewById(R.id.tabs_view);
@@ -113,11 +133,13 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
         mPlayim = (ImageView) findViewById(R.id.image1);
         ArrayList<Fragment> fragments = new ArrayList<Fragment>();
         //  fragments.add(SuggestFragment.newInstance());
-        fragments.add(RecentFragment.newInstance());
+        fragments.add(new SuggestionFragment());
+        //fragments.add(RecentFragment.newInstance());
         fragments.add(TrackFragment.newInstance());
         fragments.add(AlbumFragment.newInstance());
-
-        fragments.add(new PlaylistFragment());
+        fragments.add(new ArtistFragment());
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+       // fragments.add(new PlaylistFragment());
         mPagerAdap = new TrackPagerAdap(getSupportFragmentManager(), fragments);
         mPager.setAdapter(mPagerAdap);
         mPager.setCurrentItem(0);
@@ -132,13 +154,7 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
 
             @Override
             public void onPageSelected(int position) {
-                if (position == 3) {
-                    mMenu.findItem(R.id.action_shuffle).setVisible(false);
-                    mMenu.findItem(R.id.action_playlist).setVisible(true);
-                } else {
-                    mMenu.findItem(R.id.action_playlist).setVisible(false);
-                    mMenu.findItem(R.id.action_shuffle).setVisible(true);
-                }
+
             }
 
             @Override
@@ -163,6 +179,35 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
             }
         });
 
+        ll.setOnTouchListener(new OnSwipeTouchListener(this, metrics.density){
+            @Override
+            public void onSwipeLeft() {
+                Toast.makeText(MainActivity.this, "top", Toast.LENGTH_SHORT).show();
+                try {
+                    MusicUtils.mService.goToPrev();
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            @Override
+            public void onSwipeRight() {
+                Toast.makeText(MainActivity.this, "Next", Toast.LENGTH_SHORT).show();
+                try {
+                    MusicUtils.mService.goToNext();
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            @Override
+            public void onSingle() {
+                Toast.makeText(MainActivity.this, "single", Toast.LENGTH_SHORT).show();
+                startActivity(new Intent(getApplicationContext(), Play_Activity.class));
+            }
+        });
+
+
     }
 
     @Override
@@ -176,6 +221,7 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         if (id == R.id.action_settings) {
+            finish();
             return true;
         } else if (id == R.id.action_search) {
             startActivity(new Intent(this, SearchActivity.class));
@@ -191,6 +237,7 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
     @Override
     public void onServiceConnected(ComponentName name, IBinder service) {
         MusicUtils.mService = IMusicParent.Stub.asInterface(service);
+        Log.i(TAG, "onServiceConnected: ");
     }
 
     @Override
@@ -201,6 +248,7 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
     @Override
     protected void onResume() {
         super.onResume();
+        Log.i(TAG, "onResume: ");
         if (myf == null) {
             myf = new MyReceiver();
             IntentFilter intentFilter = new IntentFilter();
@@ -211,12 +259,27 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
     }
 
     @Override
+    public boolean onTouchEvent(MotionEvent event) {
+       // gestureDetector.onTouchEvent(event);
+        return super.onTouchEvent(event);
+    }
+
+    @Override
     public void onPause() {
+        Log.i(TAG, "onPause: ");
         super.onPause();
         if (myf != null) {
             unregisterReceiver(myf);
             myf = null;
         }
+        ImageLoader.getInstance().clearMemoryCache();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        Log.i(TAG, "onDestroy: ");
+        stopService(new Intent(this, IMusicChild.class));
     }
 
     public class MyReceiver extends BroadcastReceiver {
@@ -226,26 +289,98 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
         @Override
         public void onReceive(final Context context, final Intent intent) {
             String action = intent.getAction();
-            String path = intent.getExtras().getString("albumArt");
+
             if (action.equals(IMusicChild.META_CHANGED)) {
-
-/*
-                try {
-                   // String s = MusicUtils.mService.getTrackName();
-                    //s = (s == null)? MusicUtils.mService.getTrackName()  : "  ";
-                   // mTrack.setText(s);
-//                    mArtist.setText(MusicUtils.mService.getArtistName());
-                    ImageLoader.getInstance().displayImage("file:///" + path,im);
-                } catch (RemoteException e) {
-                    e.printStackTrace();
-                }
-*/
-
-
+                Bundle data = intent.getExtras();
+                    mTrack.setText(data.getString("tName"));
+                    mArtist.setText(data.getString("aName"));
+                    ImageLoader.getInstance().displayImage("file:///" + data.getString("albumArt"), im);
             } else if (action.equals(IMusicChild.NEXT_ACTION)) {
 
             }
         }
     }
+
+
+    public class OnSwipeTouchListener implements View.OnTouchListener {
+
+        private final GestureDetector gestureDetector;
+        private int SWIPE_THRESHOLD = 100;
+
+        public OnSwipeTouchListener (Context ctx, float pix){
+            SWIPE_THRESHOLD = ((int) Math.round(pix * 25));
+            gestureDetector = new GestureDetector(ctx, new GestureListener());
+        }
+
+        @Override
+        public boolean onTouch(View v, MotionEvent event) {
+            return gestureDetector.onTouchEvent(event);
+        }
+
+        private final class GestureListener extends GestureDetector.SimpleOnGestureListener {
+            private static final int SWIPE_VELOCITY_THRESHOLD = 800;
+
+            @Override
+            public boolean onDown(MotionEvent e) {
+                return true;
+            }
+
+            @Override
+            public boolean onSingleTapConfirmed(MotionEvent e) {
+                onSingle();
+                return super.onSingleTapConfirmed(e);
+            }
+
+            @Override
+            public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+                boolean result = false;
+
+                try {
+                    float diffY = e2.getY() - e1.getY();
+                    float diffX = e2.getX() - e1.getX();
+                    Log.i("xxxxxxxxx", "onFling: " + velocityX +"  -  " +diffX + " - " + SWIPE_THRESHOLD);
+                    if (Math.abs(diffX) > Math.abs(diffY)) {
+                        if (Math.abs(diffX) > SWIPE_THRESHOLD && Math.abs(velocityX) > SWIPE_VELOCITY_THRESHOLD) {
+                            if (diffX > 0) {
+                                onSwipeRight();
+                            } else {
+                                onSwipeLeft();
+                            }
+                        }
+                        result = true;
+                    }
+                    else if (Math.abs(diffY) > SWIPE_THRESHOLD && Math.abs(velocityY) > SWIPE_VELOCITY_THRESHOLD) {
+                        if (diffY > 0) {
+                            onSwipeBottom();
+                        } else {
+                            onSwipeTop();
+                        }
+                    }
+                    result = true;
+
+                } catch (Exception exception) {
+                    exception.printStackTrace();
+                }
+                return result;
+            }
+        }
+
+        public void onSwipeRight() {
+        }
+
+        public void onSwipeLeft() {
+        }
+
+        public void onSwipeTop() {
+        }
+
+        public void onSwipeBottom() {
+        }
+
+        public void onSingle() {
+
+        }
+    }
+
 }
 

@@ -76,7 +76,6 @@ public class NowPlayingLoader extends AsyncTaskLoader<List<Song>> {
                 int o = mSongIndexList.indexOf(id);
                 mSongList.set(o, song);
             } while (mCursor.moveToNext());
-            etc.addTimeFrame("B");etc.printDifference();
         }
         if (mCursor != null) {
             mCursor.close();

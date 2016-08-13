@@ -1,15 +1,12 @@
 package mp.ajapps.musicplayerfree.Fragments;
 
 import android.app.Activity;
-import android.content.Context;
 import android.database.Cursor;
-import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.RemoteException;
 import android.provider.BaseColumns;
 import android.provider.MediaStore;
-import android.support.design.widget.AppBarLayout;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
@@ -19,21 +16,23 @@ import android.support.v7.widget.Toolbar;
 import android.support.v7.view.ActionMode;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Toast;
 
-import java.util.List;
+import com.futuremind.recyclerviewfastscroll.FastScroller;
+import com.nostra13.universalimageloader.core.ImageLoader;
+import com.nostra13.universalimageloader.core.listener.PauseOnScrollListener;
 
 import mp.ajapps.musicplayerfree.Adapters.TrackAdapter;
 import mp.ajapps.musicplayerfree.Helpers.MusicUtils;
 import mp.ajapps.musicplayerfree.R;
 import mp.ajapps.musicplayerfree.Widgets.ListPlaylistDailog;
+import mp.ajapps.musicplayerfree.Widgets.RecyclerPauseOnScrollListener;
+import mp.ajapps.musicplayerfree.Widgets.SimpleDividerItemDecoration;
 
 
 public class TrackFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor>, TrackAdapter.myOnCLickInterface, ActionMode.Callback {
@@ -46,6 +45,7 @@ public class TrackFragment extends Fragment implements LoaderManager.LoaderCallb
     ActionMode mActionMode;
     Toolbar mToolbar;
     StringBuilder where;
+    FastScroller fastScroller;
     Cursor mCursor;
     String mWhere;
     AppCompatActivity act;
@@ -73,26 +73,33 @@ public class TrackFragment extends Fragment implements LoaderManager.LoaderCallb
         where.append(MediaStore.Audio.AudioColumns.IS_MUSIC + "=1").append(" AND " + MediaStore.MediaColumns.TITLE + " != ''");
         mWhere = where.toString();
         mProjection = new String[]{
-                BaseColumns._ID, MediaStore.MediaColumns.TITLE, MediaStore.Audio.AudioColumns.ALBUM, MediaStore.Audio.AudioColumns.ARTIST
+                BaseColumns._ID, MediaStore.MediaColumns.TITLE, MediaStore.Audio.AudioColumns.ALBUM, MediaStore.Audio.AudioColumns.ARTIST,MediaStore.Audio.Media.ALBUM_ID
         };
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        getLoaderManager().initLoader(0, null, this);
+        getLoaderManager().initLoader(4, null, this);
         View v = inflater.inflate(R.layout.fragment_track, container, false);
         mRecycleView = (RecyclerView) v.findViewById(R.id.mRecycleView);
         act = (AppCompatActivity)getActivity();
         mLayoutManager = new LinearLayoutManager(getActivity());
         mLayoutManager.setOrientation(LinearLayoutManager.VERTICAL);
         mLayoutManager.setSmoothScrollbarEnabled(true);
+        mRecycleView.addItemDecoration(new SimpleDividerItemDecoration(getActivity()));
         mRecycleView.setLayoutManager(mLayoutManager);
-        mAdpt = new TrackAdapter(R.layout.track_row, this);
+        mAdpt = new TrackAdapter(getActivity(), R.layout.track_row, this, getFragmentManager());
         mRecycleView.setAdapter(mAdpt);
+        mRecycleView.setItemViewCacheSize(40);
+
+        mRecycleView.addOnScrollListener(new RecyclerPauseOnScrollListener(ImageLoader.getInstance(), true, false));
+        fastScroller = (FastScroller) v.findViewById(R.id.fastscroll);
+        fastScroller.setScrollBarSize(20);
+
+        fastScroller.setRecyclerView(mRecycleView);
         return v;
     }
-
 
     @Override
     public void onAttach(Activity activity) {
@@ -143,7 +150,7 @@ public class TrackFragment extends Fragment implements LoaderManager.LoaderCallb
     }
 
     @Override
-    public void myOnClick(int pos) {
+    public void myOnClick(int pos, View v) {
         if (mActionMode == null) {
             MusicUtils.setAndPlay(mCursor, pos);
         } else {
@@ -152,9 +159,11 @@ public class TrackFragment extends Fragment implements LoaderManager.LoaderCallb
     }
 
     @Override
-    public void myOnLongClick(int pos) {
-        mActionMode = act.startSupportActionMode(this);
-        this.doToggle(pos);
+    public void myOnLongClick(int pos, View v) {
+        if (mActionMode == null) {
+            mActionMode = act.startSupportActionMode(this);
+            this.doToggle(pos);
+        }
     }
 
     @Override
@@ -166,6 +175,10 @@ public class TrackFragment extends Fragment implements LoaderManager.LoaderCallb
 
     private void doToggle(int pos) {
         this.mAdpt.toggleSelection(pos);
+        if (mAdpt.getSelectedItemCount() == 0) {
+            mActionMode.finish();
+            return;
+        }
         mActionMode.setTitle(mAdpt.getSelectedItemCount()+"");
     }
 
@@ -179,6 +192,7 @@ public class TrackFragment extends Fragment implements LoaderManager.LoaderCallb
         switch (item.getItemId()) {
             case R.id.action_add:
                 new ListPlaylistDailog().setList(mAdpt.getSelectedItems()).show(getFragmentManager(),"5");
+                mActionMode.finish();
                 return true;
             case R.id.action_playSelected:
                 try {
@@ -189,9 +203,9 @@ public class TrackFragment extends Fragment implements LoaderManager.LoaderCallb
                 }
                 return true;
             default:
+                mActionMode.finish();
                 return false;
         }
-
     }
 
     @Override
@@ -199,4 +213,6 @@ public class TrackFragment extends Fragment implements LoaderManager.LoaderCallb
         mActionMode = null;
         mAdpt.clearSelections();
     }
+
+
 }

@@ -5,6 +5,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.util.Log;
 
 public class RecentStore extends SQLiteOpenHelper {
     public static final String DATABASENAME = "musicdb.db";
@@ -35,6 +36,7 @@ public class RecentStore extends SQLiteOpenHelper {
     }
 
     public void saveSongId(final long songId) {
+        Log.i("rrecive", "saveSongId: ---");
         final SQLiteDatabase database = getWritableDatabase();
         final ContentValues values = new ContentValues(2);
         database.beginTransaction();

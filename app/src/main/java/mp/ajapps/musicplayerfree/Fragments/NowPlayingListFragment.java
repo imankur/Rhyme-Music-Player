@@ -53,7 +53,7 @@ public class NowPlayingListFragment extends Fragment implements LoaderManager.Lo
         mLayoutManager.setOrientation(LinearLayoutManager.VERTICAL);
         mLayoutManager.setSmoothScrollbarEnabled(true);
         mList.setLayoutManager(mLayoutManager);
-        getLoaderManager().initLoader(1, null, this).forceLoad();
+        getLoaderManager().initLoader(2, null, this).forceLoad();
         return v;
     }
     public int getStatusBarHeight() {

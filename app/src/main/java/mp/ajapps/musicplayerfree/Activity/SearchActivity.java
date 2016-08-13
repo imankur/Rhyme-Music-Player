@@ -1,5 +1,7 @@
 package mp.ajapps.musicplayerfree.Activity;
 
+import java.util.ArrayList;
+
 import android.app.LoaderManager;
 import android.content.CursorLoader;
 import android.content.Intent;
@@ -10,6 +12,7 @@ import android.os.Bundle;
 import android.provider.BaseColumns;
 import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
@@ -22,9 +25,10 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.ImageView;
-
 import mp.ajapps.musicplayerfree.Adapters.SearchAdapter;
+
 import mp.ajapps.musicplayerfree.Helpers.MusicUtils;
+import mp.ajapps.musicplayerfree.POJOS.SearchPojo;
 import mp.ajapps.musicplayerfree.R;
 
 public class SearchActivity extends AppCompatActivity implements TextWatcher, LoaderManager.LoaderCallbacks<Cursor>, SearchAdapter.myOnCLickInterface {
@@ -58,11 +62,16 @@ public class SearchActivity extends AppCompatActivity implements TextWatcher, Lo
         mEditText.addTextChangedListener(this);
         this.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
         mRecycleView = (RecyclerView) findViewById(R.id.view4);
-        mLayoutManager = new LinearLayoutManager(this);
-        mLayoutManager.setOrientation(LinearLayoutManager.VERTICAL);
-        mLayoutManager.setSmoothScrollbarEnabled(true);
-        mRecycleView.setLayoutManager(mLayoutManager);
-        mAdpt = new SearchAdapter(R.layout.search_track_row, this);
+        mAdpt = new SearchAdapter(this);
+
+        GridLayoutManager mGLM = new GridLayoutManager(this,3);
+        mGLM.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
+            @Override
+            public int getSpanSize(int position) {
+                return getSpanSizeOfView(position);
+            }
+        });
+        mRecycleView.setLayoutManager(mGLM);
         mRecycleView.setAdapter(mAdpt);
         mClear.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -72,7 +81,16 @@ public class SearchActivity extends AppCompatActivity implements TextWatcher, Lo
         });
         mString = "------";
         lm = getLoaderManager();
-        lm.initLoader(0, null, this);
+       // lm.initLoader(0, null, this);
+    }
+
+    private int getSpanSizeOfView (int pos) {
+        int type = mAdpt.getItemViewType(pos);
+        if (type == 1 || type == 2 || type == 3) {
+            return 3;
+        } else  {
+            return 1;
+        }
     }
 
     @Override
@@ -102,8 +120,30 @@ public class SearchActivity extends AppCompatActivity implements TextWatcher, Lo
             return;
         }
 
+        ArrayList<SearchPojo> data = new ArrayList<>();
 
-        lm.restartLoader(0, null, this);
+        ArrayList<SearchPojo> mALbum = MusicUtils.searchAlbum(this, mString);
+        if (mALbum.size() > 0) {
+            data.add(new SearchPojo(2));
+            data.addAll(mALbum);
+        }
+
+        ArrayList<SearchPojo> mTrack = MusicUtils.searchSong(this, mString);
+        if (mTrack.size() > 0) {
+            data.add(new SearchPojo(1));
+            data.addAll(mTrack);
+        }
+
+
+        if (data.size() > 0) {
+            mAdpt.changeCursor(data);
+        } else {
+            mAdpt.changeCursor(null);
+        }
+        mAdpt.notifyDataSetChanged();
+
+
+        //lm.restartLoader(0, null, this);
     }
 
     @Override

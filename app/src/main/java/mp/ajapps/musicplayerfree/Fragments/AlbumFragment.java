@@ -1,6 +1,5 @@
 package mp.ajapps.musicplayerfree.Fragments;
 
-import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
@@ -11,13 +10,14 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.LoaderManager.LoaderCallbacks;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
+import android.support.v7.widget.GridLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
-import android.widget.GridView;
 
-import mp.ajapps.musicplayerfree.Activity.Album_Details;
+import com.nostra13.universalimageloader.core.ImageLoader;
+
 import mp.ajapps.musicplayerfree.Adapters.AlbumAdapter;
 import mp.ajapps.musicplayerfree.R;
 
@@ -34,16 +34,13 @@ public class AlbumFragment extends Fragment implements LoaderCallbacks<Cursor> {
     protected String[] mProjection = null;
     protected Uri mUri = null;
     String TAG = "ankurr";
-    private GridView mGridview;
+    private RecyclerView mGridview;
     private int mAlbumIdx;
     private int mArtistIdx;
     private int mAlbumArtIndex, mID;
 
-    public AlbumFragment() {
-        // Required empty public constructor
-    }
+    public AlbumFragment() {}
 
-    // TODO: Rename and change types and number of parameters
     public static AlbumFragment newInstance() {
         AlbumFragment fragment = new AlbumFragment();
         return fragment;
@@ -61,8 +58,6 @@ public class AlbumFragment extends Fragment implements LoaderCallbacks<Cursor> {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        // setupFragmentData();
-
     }
 
     @Override
@@ -75,15 +70,19 @@ public class AlbumFragment extends Fragment implements LoaderCallbacks<Cursor> {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
         View v = inflater.inflate(R.layout.fragment_album, container, false);
-        mGridview = (GridView) v.findViewById(R.id.album_frag);
+        mGridview = (RecyclerView) v.findViewById(R.id.album_frag);
+        mGridview.setLayoutManager(new GridLayoutManager(getActivity(),3));
         mAdapter = new AlbumAdapter(getActivity());
+        setupFragmentData();
+        mGridview.setAdapter(mAdapter);
+        getLoaderManager().initLoader(0, null, this);
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            mGridview.setNestedScrollingEnabled(true);
+            //mGridview.setNestedScrollingEnabled(true);
         }
 
-        mGridview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+       /* mGridview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 mCursor.moveToPosition(position);
@@ -96,8 +95,30 @@ public class AlbumFragment extends Fragment implements LoaderCallbacks<Cursor> {
                 intent.putExtras(bundle);
                 startActivity(intent);
             }
+        });*/
+
+        mGridview.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
+                super.onScrollStateChanged(recyclerView, newState);
+                switch (newState) {
+                    case RecyclerView.SCROLL_STATE_IDLE:
+                        ImageLoader.getInstance().resume();
+                        break;
+                    case RecyclerView.SCROLL_STATE_DRAGGING:
+                        ImageLoader.getInstance().pause();
+                        break;
+                    case RecyclerView.SCROLL_STATE_SETTLING:
+                        ImageLoader.getInstance().pause();
+                        break;
+                }
+            }
+
+            @Override
+            public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
+                super.onScrolled(recyclerView, dx, dy);
+            }
         });
-        mGridview.setAdapter(mAdapter);
         return v;
     }
 

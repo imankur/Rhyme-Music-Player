@@ -54,8 +54,9 @@ public class RecentFragment extends Fragment implements TrackAdapter.myOnCLickIn
         mLayoutManager.setSmoothScrollbarEnabled(true);
 
         mRecycleView.setLayoutManager(mLayoutManager);
-        mAdpt = new TrackAdapter(R.layout.track_row, this);
+        mAdpt = new TrackAdapter(getActivity(), R.layout.track_row, this,getFragmentManager());
         c = makeRecentTracksCursor();
+        Log.i("aaaaaaaa", "onCreateView: "+c.getCount());
         mAdpt.changeCursor(c);
         mRecycleView.setAdapter(mAdpt);
         return view;
@@ -75,12 +76,12 @@ public class RecentFragment extends Fragment implements TrackAdapter.myOnCLickIn
     }
 
     @Override
-    public void myOnClick(int pos) {
+    public void myOnClick(int pos, View v) {
         MusicUtils.setAndPlay(c, pos);
     }
 
     @Override
-    public void myOnLongClick(int pos) {
+    public void myOnLongClick(int pos,  View v) {
 
     }
 

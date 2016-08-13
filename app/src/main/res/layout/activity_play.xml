@@ -38,9 +38,7 @@
     <ImageButton
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:paddingTop="10dp"
-        android:paddingLeft="10dp"
-        android:paddingRight="10dp"
+        android:padding="12dp"
         android:text="New Button"
         android:background="@android:color/transparent"
         android:src="@drawable/ic_navigation_expand_less"

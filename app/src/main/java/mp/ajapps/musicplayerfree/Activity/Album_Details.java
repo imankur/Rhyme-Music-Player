@@ -6,7 +6,9 @@ import android.content.CursorLoader;
 import android.content.res.ColorStateList;
 import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.provider.BaseColumns;
 import android.provider.MediaStore;
@@ -14,6 +16,7 @@ import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.CollapsingToolbarLayout;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.FloatingActionButton;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.view.ViewCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.graphics.Palette;
@@ -29,20 +32,23 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.nostra13.universalimageloader.core.DisplayImageOptions;
 import com.nostra13.universalimageloader.core.ImageLoader;
 import com.nostra13.universalimageloader.core.assist.FailReason;
 import com.nostra13.universalimageloader.core.listener.ImageLoadingListener;
+import com.nostra13.universalimageloader.core.listener.SimpleImageLoadingListener;
 
 import mp.ajapps.musicplayerfree.Adapters.Album_Details_Adapter;
 import mp.ajapps.musicplayerfree.Adapters.TrackAdapter;
 import mp.ajapps.musicplayerfree.Helpers.MusicUtils;
 import mp.ajapps.musicplayerfree.R;
+import mp.ajapps.musicplayerfree.Widgets.SimpleDividerItemDecoration;
 
 public class Album_Details extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor>, Album_Details_Adapter.myOnCLickInterface {
     protected LinearLayoutManager mLayoutManager;
     protected Album_Details_Adapter mAdpt;
     ImageView mImg;
-    TextView mAlbum;
+    TextView mAlbum, mArtist;
     RecyclerView recyclerView;
     Toolbar toolbar;
     FloatingActionButton fab;
@@ -71,39 +77,27 @@ public class Album_Details extends AppCompatActivity implements LoaderManager.Lo
         getLoaderManager().initLoader(0, null, this);
         mImg = (ImageView) findViewById(R.id.image);
         mAlbum = (TextView) findViewById(R.id.albumName);
+        mArtist = (TextView) findViewById(R.id.textView10);
         mLayoutManager = new LinearLayoutManager(this);
         mLayoutManager.setOrientation(LinearLayoutManager.VERTICAL);
         mLayoutManager.setSmoothScrollbarEnabled(true);
         recyclerView = (RecyclerView) findViewById(R.id.view3);
         recyclerView.setLayoutManager(mLayoutManager);
-        recyclerView.setItemAnimator(new DefaultItemAnimator());
+        recyclerView.addItemDecoration(new SimpleDividerItemDecoration(this, 80));
+        //recyclerView.setItemAnimator(new DefaultItemAnimator());
         mAdpt = new Album_Details_Adapter(this);
         recyclerView.setAdapter(mAdpt);
-        ImageLoader.getInstance().displayImage(v, mImg, new ImageLoadingListener() {
-            @Override
-            public void onLoadingStarted(String imageUri, View view) {
-
-            }
-
-            @Override
-            public void onLoadingFailed(String imageUri, View view, FailReason failReason) {
-
-            }
-
+        ImageLoader.getInstance().displayImage(v, mImg, new DisplayImageOptions.Builder().showImageForEmptyUri(R.drawable.default_artwork).showImageOnFail(R.drawable.default_artwork).build(),new SimpleImageLoadingListener(){
             @Override
             public void onLoadingComplete(String imageUri, View view, Bitmap loadedImage) {
+                super.onLoadingComplete(imageUri, view, loadedImage);
                 Palette p = Palette.from(loadedImage).generate();
-                mLabelLayout.setBackgroundColor(p.getDarkMutedColor(Color.DKGRAY));
-                //ctl.setContentScrimColor(p.getDarkMutedColor(Color.DKGRAY));
-            }
-
-            @Override
-            public void onLoadingCancelled(String imageUri, View view) {
-
+                mLabelLayout.setBackgroundColor(p.getDarkVibrantColor(Color.DKGRAY));
             }
         });
         final String s =  mBundle.get("album") + "";
         mAlbum.setText(mBundle.get("album") + "");
+        mArtist.setText(mBundle.get("artist") +"");
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -122,7 +116,7 @@ public class Album_Details extends AppCompatActivity implements LoaderManager.Lo
             }
         };
 
-        abl.addOnOffsetChangedListener(mListener);
+       // abl.addOnOffsetChangedListener(mListener);
     }
 
     @Override
@@ -220,6 +214,35 @@ public class Album_Details extends AppCompatActivity implements LoaderManager.Lo
         public void onNestedPreScroll(CoordinatorLayout coordinatorLayout, AppBarLayout child, View target, int dx, int dy, int[] consumed) {
             super.onNestedPreScroll(coordinatorLayout, child, target, dx, dy, consumed);
             isPositive = dy > 0;
+        }
+    }
+
+    public class SimpleDividerItemDecoration extends RecyclerView.ItemDecoration {
+        private Drawable mDivider;
+        private int size;
+
+        public SimpleDividerItemDecoration(Context context, int paddingLeft) {
+            this.size = paddingLeft;
+            mDivider = ContextCompat.getDrawable(context, R.drawable.line_divider_black);
+        }
+
+        @Override
+        public void onDrawOver(Canvas c, RecyclerView parent, RecyclerView.State state) {
+            int left = parent.getPaddingLeft() + (size * 2);
+            int right = parent.getWidth() - parent.getPaddingRight();
+
+            int childCount = parent.getChildCount();
+            for (int i = 0; i < childCount; i++) {
+                View child = parent.getChildAt(i);
+
+                RecyclerView.LayoutParams params = (RecyclerView.LayoutParams) child.getLayoutParams();
+
+                int top = child.getBottom() + params.bottomMargin;
+                int bottom = top + mDivider.getIntrinsicHeight();
+
+                mDivider.setBounds(left, top, right, bottom);
+                mDivider.draw(c);
+            }
         }
     }
 }

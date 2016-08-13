@@ -107,6 +107,7 @@ public class PlayFragment extends Fragment {
     public void onResume() {
         super.onResume();
         onServiceConnected();
+        updateNowPlayingInfo();
         if (myf == null) {
             myf = new MyReceiver();
             IntentFilter intentFilter = new IntentFilter();
@@ -139,8 +140,8 @@ public class PlayFragment extends Fragment {
         tvCurrentTime = (TextView) v.findViewById(R.id.textView6);
         tvFullTime = (TextView) v.findViewById(R.id.textView7);
          AdView mAdView = (AdView) v.findViewById(R.id.adView);
-         AdRequest adRequest = new AdRequest.Builder().addTestDevice("7971949E9B14F3AB74918D51DB72B497").build();
-         mAdView.loadAd(adRequest);
+       //  AdRequest adRequest = new AdRequest.Builder().addTestDevice("7971949E9B14F3AB74918D51DB72B497").build();
+      //   mAdView.loadAd(adRequest);
         exm.addTimeFrame("1");
         mContext.startService(new Intent(mContext, IMusicChild.class));
         mPlayPause = (ImageView) v.findViewById(R.id.imageButton3);
@@ -185,6 +186,18 @@ public class PlayFragment extends Fragment {
             public void onClick(View v) {
                 try {
                     MusicUtils.mService.toggleShuffle();
+                    drawRepeats();
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        mRepeat.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                try {
+                    MusicUtils.mService.toggleRepeat();
+                    drawRepeats();
                 } catch (RemoteException e) {
                     e.printStackTrace();
                 }
@@ -246,6 +259,9 @@ public class PlayFragment extends Fragment {
                 updateAsset();
             }
         });
+        updateNowPlayingInfo();
+        onServiceConnected();
+        drawRepeats();
         return v;
     }
 
@@ -282,6 +298,15 @@ public class PlayFragment extends Fragment {
         }
     }
 
+    private void drawRepeats(){
+        try {
+            mRepeat.setImageResource(MusicUtils.mService.getRepeatMode() == 1 ?  R.drawable.ic_repeat : R.drawable.ic_repea_stop);
+            mShuffle.setImageResource(MusicUtils.mService.getShuffleMode() == 0? R.drawable.ic_shufeel : R.drawable.shuffle_stop);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+    }
+
     private void updateNowPlayingInfo() {
         try {
             tvTitle.setText(MusicUtils.mService.getTrackName());
@@ -304,7 +329,6 @@ public class PlayFragment extends Fragment {
                 mViewPager.setCurrentItem(MusicUtils.getQueuePosition(), true);
                 updateNowPlayingInfo();
             } else if (action.equals(IMusicChild.Queue_Changed)) {
-                Toast.makeText(getActivity(), "chnged", Toast.LENGTH_SHORT).show();
                 mALbumArtAdapter = new AlbumArt_Pager_Adapter(getFragmentManager(), getActivity());
                 mALbumArtAdapter.setLength(MusicUtils.getQueueSize());
                 mViewPager.setAdapter(mALbumArtAdapter);

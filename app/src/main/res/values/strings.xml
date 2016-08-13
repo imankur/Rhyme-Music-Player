@@ -3,6 +3,7 @@
 
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
+    <string name="action_exit">Exit</string>
     <string name="banner_ad_unit_id">ca-app-pub-9662598803448937/3325155401</string>
 
     <!-- TODO: Remove or change this placeholder text -->
@@ -13,4 +14,9 @@
     <string name="durationformatlong" translatable="false"><xliff:g id="format">%1$d:%3$02d:%5$02d</xliff:g></string>
     <string name="title_activity_album__deatils_">" "</string>
     <string name="title_activity_album__details">" "</string>
+    <string name="title_activity_suggestion_details">SuggestionDetails</string>
+    <string name="title_activity_artist__details">Artist_Details</string>
+
+
+    <string name="toolbar_title">My Library</string>
 </resources>

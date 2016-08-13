@@ -27,5 +27,5 @@ Ankur Jain - ankurjainips@gmail.com
 
 Libraries Used
 ===========================
-Universal Image Loader
-Futuremind RecyclerFastScroll
+- Universal Image Loader
+- Futuremind RecyclerFastScroll

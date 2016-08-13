@@ -4,9 +4,11 @@ import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.BroadcastReceiver;
 import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.graphics.Bitmap;
@@ -19,6 +21,8 @@ import android.os.PowerManager;
 import android.os.RemoteException;
 import android.provider.MediaStore;
 import android.support.v7.app.NotificationCompat;
+import android.telephony.PhoneStateListener;
+import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.View;
 import android.widget.RemoteViews;
@@ -41,6 +45,8 @@ public class IMusicChild extends Service implements MediaPlayer.OnPreparedListen
 
     public static final String META_CHANGED = "mp.ajapps.musicplayerfree.metachanged";
     public static final String NEXT_ACTION = "mp.ajapps.musicplayerfree.next";
+    public static final String PLAY_TOGGLE_ACTION = "mp.ajapps.musicplayerfree.playtoggle";
+    public static final String PREV_ACTION = "mp.ajapps.musicplayerfree.prev";
     public static final String Queue_Changed = "mp.ajapps.musicplayerfree.Queue";
     public static final int SHUFFLE_AUTO = 2;
     private static final int SHUFFLE_NONE = 0;
@@ -65,6 +71,7 @@ public class IMusicChild extends Service implements MediaPlayer.OnPreparedListen
     private Cursor mCursor, mAlbumCursor;
     private boolean mIsPlaying = false;
     private NotificationManager mNotificationManager;
+    private Notification notificationCompat;
     private int mPlayPos = 0;
     private MediaPlayer mMediaPlayer, mNextMediaPlayer;
     private long[] mPlayList = null;
@@ -73,8 +80,28 @@ public class IMusicChild extends Service implements MediaPlayer.OnPreparedListen
     private int mNextPlayPos = -1;
     private int mOpenFailedCounter = 0;
     private ArrayList<String> mCurrentInfoList;
-
+    private ServiceReciver mReciver =null;
+private TelephonyManager tm;
+    private TelePhonyDetector td;
     public IMusicChild() {
+    }
+
+    public class TelePhonyDetector extends PhoneStateListener {
+        @Override
+        public void onCallStateChanged(int state, String incomingNumber) {
+
+            switch (state) {
+                case TelephonyManager.CALL_STATE_RINGING :
+                    mMediaPlayer.pause();
+                    break;
+                case TelephonyManager.CALL_STATE_IDLE :
+                    mMediaPlayer.start();
+                    break;
+                case TelephonyManager.CALL_STATE_OFFHOOK :
+                    //mMediaPlayer.start();
+                    break;
+            }
+        }
     }
 
     @Override
@@ -102,6 +129,22 @@ public class IMusicChild extends Service implements MediaPlayer.OnPreparedListen
         return -1;
     }
 
+    private class HeadSetReceiver extends BroadcastReceiver {
+        @Override public void onReceive(Context context, Intent intent) {
+            if (intent.getAction().equals(Intent.ACTION_HEADSET_PLUG)) {
+                int state = intent.getIntExtra("state", -1);
+                switch (state) {
+                    case 0:
+                        Log.d(TAG, "Headset unplugged");
+                        break;
+                    case 1:
+                        Log.d(TAG, "Headset plugged");
+                        break;
+                }
+            }
+        }
+    }
+
     private boolean isPlaying() {
         return mMediaPlayer.isPlaying();
     }
@@ -112,14 +155,63 @@ public class IMusicChild extends Service implements MediaPlayer.OnPreparedListen
         mPlaybackState = new MusicPlaybackState(this);
         mRecentStore = RecentStore.getInstance(this);
         mPreferences = getSharedPreferences("service", 0);
+        mReciver = new ServiceReciver();
+        IntentFilter mFilter = new IntentFilter();
+        mFilter.addAction(PLAY_TOGGLE_ACTION);
+        mFilter.addAction(PREV_ACTION);
+        mFilter.addAction(NEXT_ACTION);
+        mFilter.addAction(Intent.ACTION_HEADSET_PLUG);
+        mFilter.addAction(META_CHANGED);
+
+        mFilter.addAction(Intent.ACTION_NEW_OUTGOING_CALL);
+        registerReceiver(mReciver, mFilter);
         if (mMediaPlayer == null) {
             mMediaPlayer = new MediaPlayer();
             mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
         }
+        tm = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
+        td = new TelePhonyDetector();
+        tm.listen(td, PhoneStateListener.LISTEN_CALL_STATE);
         mCurrentInfoList = new ArrayList<String>();
         reloadQueue();
         mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        sendBroadcast(new Intent().setAction(IMusicChild.META_CHANGED).putExtra("albumArt", this.getAlbumArt()));
+        sendBroadcast(new Intent().setAction(IMusicChild.META_CHANGED).putExtra("albumArt", this.getAlbumArt()).putExtra("tName",this.getTrackName()).putExtra("aName",getArtistName()));
+    }
+
+    private class ServiceReciver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            switch (intent.getAction()) {
+                case NEXT_ACTION :
+                    goToNext();
+                    break;
+                case PREV_ACTION :
+                    goToPrev();
+                    break;
+                case PLAY_TOGGLE_ACTION :
+                    togglePlay();
+                    break;
+                case META_CHANGED :
+                    buildNotification();
+                    break;
+                case Intent.ACTION_NEW_OUTGOING_CALL :
+                    mMediaPlayer.pause();
+                    break;
+                case Intent.ACTION_HEADSET_PLUG :
+                    int state = intent.getIntExtra("state", -1);
+                    switch (state) {
+                        case 0:
+                            mMediaPlayer.pause();
+                            break;
+                        case 1:
+                            Log.d(TAG, "Headset plugged");
+                            break;
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
     }
 
     private long getQueueItemAtPosition(int position) {
@@ -141,47 +233,63 @@ public class IMusicChild extends Service implements MediaPlayer.OnPreparedListen
     }
 
     private void buildNotification() {
-        String strtitle = "titlll";
         Intent intent = new Intent(this, MainActivity.class);
-        intent.putExtra("title", strtitle);
         PendingIntent pIntent = PendingIntent.getActivity(this, 0, intent,
                 PendingIntent.FLAG_UPDATE_CURRENT);
 
         final android.support.v4.app.NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this)
-                .setSmallIcon(R.drawable.ic_play)
-                .setTicker("sfsdfsdf")
+                .setSmallIcon(R.drawable.ic_stat_ic_launcher)
                 .setContentTitle(this.getTrackName())
+                .setOngoing(true)
                 .setContentText(this.getArtistName())
-                .addAction(R.drawable.icon_pause, "act", pIntent)
                 .setContentIntent(pIntent)
-                .setAutoCancel(true);
+                .setAutoCancel(false);
+
+        notificationCompat = mBuilder.build();
+        notificationCompat.priority = Notification.PRIORITY_HIGH;
+        RemoteViews notiLayoutBig = new RemoteViews(getPackageName(),
+                R.layout.notification_layout);
+        RemoteViews notiCollapsedView = new RemoteViews(getPackageName(),
+                R.layout.notification_small);
+        notificationCompat.bigContentView = notiLayoutBig;
+        notificationCompat.contentView = notiCollapsedView;
+
+        Intent intent0 = new Intent();
+        intent0.setAction( PLAY_TOGGLE_ACTION );
+        PendingIntent pendingIntent = PendingIntent.getBroadcast( this, 21111, intent0, 0 );
+        notificationCompat.bigContentView.setOnClickPendingIntent( R.id.noti_play_button, pendingIntent );
+        notificationCompat.contentView.setOnClickPendingIntent( R.id.noti_play_button, pendingIntent );
+        Intent intent1 = new Intent();
+        intent1.setAction( NEXT_ACTION );
+        pendingIntent = PendingIntent.getBroadcast(this, 22222, intent1, 0 );
+        notificationCompat.bigContentView.setOnClickPendingIntent( R.id.noti_next_button, pendingIntent );
+        notificationCompat.contentView.setOnClickPendingIntent( R.id.noti_next_button, pendingIntent );
+Intent intent2 = new Intent();
+        intent2.setAction(PREV_ACTION);
+        pendingIntent = PendingIntent.getBroadcast(this, 39222, intent2, 0);
+        notificationCompat.bigContentView.setOnClickPendingIntent( R.id.noti_prev_button, pendingIntent );
+        notificationCompat.contentView.setOnClickPendingIntent( R.id.noti_prev_button, pendingIntent );
         ImageLoader.getInstance().loadImage("file:///" + getAlbumArt(), new SimpleImageLoadingListener() {
             @Override
             public void onLoadingComplete(String imageUri, View view, Bitmap loadedImage) {
-                mBuilder.setLargeIcon(loadedImage);
-                mNotificationManager.notify(0, mBuilder.build());
+                notificationCompat.bigContentView.setTextViewText(R.id.noti_name, getTrackName());
+                notificationCompat.bigContentView.setTextViewText(R.id.noti_artist, getArtistName());
+                notificationCompat.contentView.setTextViewText(R.id.noti_name, getTrackName());
+                notificationCompat.contentView.setTextViewText(R.id.noti_artist, getArtistName());
+                notificationCompat.bigContentView.setImageViewBitmap(R.id.noti_album_art, loadedImage);
+                notificationCompat.contentView.setImageViewBitmap(R.id.noti_album_art, loadedImage);
+                if (isPlaying()) {
+                    notificationCompat.contentView.setImageViewResource(R.id.noti_play_button, R.drawable.ic_pause);
+                    notificationCompat.bigContentView.setImageViewResource(R.id.noti_play_button, R.drawable.ic_pause);
+                } else {
+                    notificationCompat.contentView.setImageViewResource(R.id.noti_play_button, R.drawable.ic_play);
+                    notificationCompat.bigContentView.setImageViewResource(R.id.noti_play_button, R.drawable.ic_play);
+                }
+
+                mNotificationManager.notify(4, notificationCompat);
             }
         });
-    }
 
-
-    private void showNotification(boolean isPlaying) {
-        final Notification notification = new NotificationCompat.Builder(getApplicationContext())
-                .setAutoCancel(true)
-                .setSmallIcon(R.drawable.ic_play)
-                .setContentTitle(getString(R.string.app_name))
-                .build();
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
-            notification.bigContentView = getExpandedView(isPlaying());
-        mNotificationManager.cancel(1);
-        ImageLoader.getInstance().loadImage("file:///" + getAlbumArt(), new SimpleImageLoadingListener() {
-            @Override
-            public void onLoadingComplete(String imageUri, View view, Bitmap loadedImage) {
-                notification.bigContentView.setImageViewBitmap(R.id.large_icon, loadedImage);
-                mNotificationManager.notify(1, notification);
-            }
-        });
     }
 
     public long[] getQueue() {
@@ -189,35 +297,6 @@ public class IMusicChild extends Service implements MediaPlayer.OnPreparedListen
             return mPlayList;
         }
     }
-
-    private RemoteViews getExpandedView(boolean isPlaying) {
-        RemoteViews customView = new RemoteViews(getPackageName(), R.layout.custom_noti);
-        customView.setImageViewResource(R.id.large_icon, R.drawable.default_artwork);
-        if (isPlaying)
-            customView.setImageViewResource(R.id.ib_play_pause, R.drawable.ic_pause);
-        else
-            customView.setImageViewResource(R.id.ib_play_pause, R.drawable.ic_play);
-        customView.setTextViewText(R.id.track, getTrackName());
-        customView.setTextViewText(R.id.artist, getArtistName());
-        //customView.setImageViewResource( R.id.ib_fast_forward, R.drawable.ic_fast_forward );
-
-        Intent intent = new Intent(getApplicationContext(), MainActivity.class);
-
-      /*  intent.setAction( ACTION_NOTIFICATION_PLAY_PAUSE );
-        PendingIntent pendingIntent = PendingIntent.getService( getApplicationContext(), 1, intent, 0 );
-        customView.setOnClickPendingIntent( R.id.ib_play_pause, pendingIntent );
-
-        intent.setAction( ACTION_NOTIFICATION_FAST_FORWARD );
-        pendingIntent = PendingIntent.getService( getApplicationContext(), 1, intent, 0 );
-        customView.setOnClickPendingIntent( R.id.ib_fast_forward, pendingIntent );
-
-        intent.setAction(ACTION_NOTIFICATION_REWIND);
-        pendingIntent = PendingIntent.getService( getApplicationContext(), 1, intent, 0 );
-        customView.setOnClickPendingIntent(R.id.ib_rewind, pendingIntent);*/
-
-        return customView;
-    }
-
 
 /*private MediaSession mSession ;
     private void setUpMediaSession() {
@@ -309,7 +388,13 @@ public class IMusicChild extends Service implements MediaPlayer.OnPreparedListen
     public void onDestroy() {
         super.onDestroy();
         mIsPlaying = false;
+        mNotificationManager.cancel(4);
+        if (mReciver != null) {
+            unregisterReceiver(mReciver);
+            mReciver = null;
+        }
         mMediaPlayer.release();
+        tm.listen(td, PhoneStateListener.LISTEN_NONE);
     }
 
     private int toggleShuffle() {
@@ -349,7 +434,6 @@ public class IMusicChild extends Service implements MediaPlayer.OnPreparedListen
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            sendBroadcast(new Intent().setAction(IMusicChild.META_CHANGED).putExtra("albumArt", this.getAlbumArt()));
             setNextDataSource();
             seekSong(seek);
         } else {
@@ -379,7 +463,8 @@ public class IMusicChild extends Service implements MediaPlayer.OnPreparedListen
     private void playPlayer(MediaPlayer player, int pos) {
         player.start();
         mRecentStore.saveSongId(mPlayList[pos]);
-        sendBroadcast(new Intent().setAction(IMusicChild.META_CHANGED).putExtra("albumArt", this.getAlbumArt()));
+        buildNotification();
+        sendBroadcast(new Intent().setAction(IMusicChild.META_CHANGED).putExtra("albumArt", this.getAlbumArt()).putExtra("tName",this.getTrackName()).putExtra("aName",getArtistName()));
     }
 
     private void setupPlayer(MediaPlayer player, int pos) throws IOException {
@@ -404,7 +489,6 @@ public class IMusicChild extends Service implements MediaPlayer.OnPreparedListen
             if (temp >= mPlayList.length) {
                 return 0;
             } else {
-                Log.i("abcde", "getNextPlayInt: " + temp + "==" + mPlayList.length);
                 return temp;
             }
         }
@@ -482,7 +566,6 @@ public class IMusicChild extends Service implements MediaPlayer.OnPreparedListen
 
     private void setNextDataSource() {
         mNextPlayPos = getNextPlayInt();
-        Log.i("abcde", "setNextDataSource: " + mNextPlayPos);
         mMediaPlayer.setNextMediaPlayer(null);
         if (mNextMediaPlayer != null) {
             mNextMediaPlayer.release();
@@ -570,6 +653,7 @@ public class IMusicChild extends Service implements MediaPlayer.OnPreparedListen
             if (mCursor == null) {
                 return " ";
             }
+            Log.i("debug-", "getTrackName: + mCursor.getColumnIndexOrThrow(MediaStore.Audio.AudioColumns.TITLE)");
             return mCursor.getString(mCursor.getColumnIndexOrThrow(MediaStore.Audio.AudioColumns.TITLE));
         }
     }
@@ -583,6 +667,7 @@ public class IMusicChild extends Service implements MediaPlayer.OnPreparedListen
                 mMediaPlayer.start();
                 mIsPlaying = true;
             }
+            sendBroadcast(new Intent().setAction(IMusicChild.META_CHANGED).putExtra("albumArt", this.getAlbumArt()).putExtra("tName",this.getTrackName()).putExtra("aName",getArtistName()));
         }
     }
 
@@ -655,7 +740,7 @@ public class IMusicChild extends Service implements MediaPlayer.OnPreparedListen
             mMediaPlayer = mNextMediaPlayer;
             mNextMediaPlayer = null;
             setNextDataSource();
-            sendBroadcast(new Intent().setAction(IMusicChild.META_CHANGED).putExtra("albumArt", this.getAlbumArt()));
+            sendBroadcast(new Intent().setAction(IMusicChild.META_CHANGED).putExtra("albumArt", this.getAlbumArt()).putExtra("tName",this.getTrackName()).putExtra("aName",getArtistName()));
         }
     }
 
@@ -792,6 +877,16 @@ public class IMusicChild extends Service implements MediaPlayer.OnPreparedListen
         @Override
         public void setAndPlayQueue(int pos) throws RemoteException {
             mService.get().setAndPlayQueue(pos);
+        }
+
+        @Override
+        public int getShuffleMode() throws RemoteException {
+            return mService.get().mShuffleMode;
+        }
+
+        @Override
+        public int getRepeatMode() throws RemoteException {
+            return mService.get().mRepeatMode;
         }
     }
 }

@@ -9,7 +9,7 @@ import java.util.ArrayList;
 public class TrackPagerAdap extends FragmentPagerAdapter {
 
     private ArrayList<Fragment> fragments;
-    private String tabtitles[] = new String[]{"Suggestions", "Tracks", "Album", "Artits", "Folders"};
+    private String tabtitles[] = new String[]{"Suggestions", "Tracks", "Album", "Artists", "Folders"};
 
     public TrackPagerAdap(FragmentManager fm, ArrayList<Fragment> fragments) {
         super(fm);

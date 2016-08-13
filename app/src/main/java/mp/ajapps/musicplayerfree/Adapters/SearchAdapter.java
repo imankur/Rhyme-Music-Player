@@ -8,6 +8,8 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.nostra13.universalimageloader.core.ImageLoader;
+
 import java.util.ArrayList;
 
 import mp.ajapps.musicplayerfree.POJOS.SearchPojo;
@@ -16,43 +18,52 @@ import mp.ajapps.musicplayerfree.R;
 /**
  * Created by Sharing Happiness on 12/2/2015.
  */
-public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+public class SearchAdapter extends RecyclerView.Adapter<SearchAdapter.ViewHolder> {
+    //public static final int ITEM_HEADER_TRACK = 1;
+    // static final int ITEM_HEADER_ALBUM = 1;
+    public static final int ITEM_ALBUM = 4;
+    public static final int ITEM_TRACK = 3;
+
     ArrayList<SearchPojo> mList = new ArrayList<SearchPojo>();
-    int rowId;
     private myOnCLickInterface mMyOnClick;
 
-    public SearchAdapter(int id, myOnCLickInterface m) {
-        this.rowId = id;
+    public SearchAdapter(myOnCLickInterface m) {
         this.mMyOnClick = m;
     }
 
     @Override
-    public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        if (viewType == 3 || viewType == 4) {
+    public SearchAdapter.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+        if (viewType == ITEM_TRACK) {
             View v = LayoutInflater.from(parent.getContext())
-                    .inflate(rowId, parent, false);
-            return new TrackHolder1(v);
-        } else if (viewType == 1) {
+                    .inflate(R.layout.search_track_row, parent, false);
+            return new ViewHolder(v);
+        } else if (viewType == ITEM_ALBUM) {
             View v = LayoutInflater.from(parent.getContext())
-                    .inflate(R.layout.header_row, parent, false);
-            return new TrackHolder2(v);
+                    .inflate(R.layout.grid_item, parent, false);
+            return new ViewHolder(v);
         } else {
             View v = LayoutInflater.from(parent.getContext())
                     .inflate(R.layout.header_row, parent, false);
-            return new TrackHolder2(v);
+            return new ViewHolder(v);
         }
     }
 
     @Override
-    public void onBindViewHolder(RecyclerView.ViewHolder holder, final int position) {
+    public void onBindViewHolder(SearchAdapter.ViewHolder holder, final int position) {
         SearchPojo temp = mList.get(position);
         final int type = temp.getmType();
-        final String id = temp.getmId();
+        final long id = temp.getmId();
 
-        if (holder instanceof TrackHolder1) {
-            ((TrackHolder1) holder).bindData(temp);
-        } else if (holder instanceof TrackHolder2) {
-            ((TrackHolder2) holder).bindData(temp);
+        if (type == ITEM_TRACK) {
+            holder.mTrackName.setText(temp.getTitle());
+            holder.mTrackDetail.setText(temp.getArtist());
+        } else if (type == ITEM_ALBUM) {
+            ImageLoader.getInstance().displayImage("file:///" + temp.getAlbum_art(), holder.mImg);
+            holder.mArtist.setText(temp.getArtist());
+            holder.mAlbum.setText(temp.getTitle());
+        } else {
+            String s = type == 1 ? "Tracks" : "Album";
+            holder.mHeader.setText(s);
         }
        /* holder.mView.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -84,42 +95,24 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
         public void myOnClick(int type, String id);
     }
 
-    protected class TrackHolder1 extends RecyclerView.ViewHolder {
+    protected class ViewHolder extends RecyclerView.ViewHolder {
         public final View mView;
-        TextView mTrackName, mTrackDetail;
+        TextView mTrackName, mTrackDetail, mAlbum , mArtist, mHeader;
+        ImageView mImg;
 
-        public TrackHolder1(View itemView) {
+        public ViewHolder(View itemView) {
             super(itemView);
+
             mView = itemView;
             mTrackName = (TextView) itemView.findViewById(R.id.textView);
             mTrackDetail = (TextView) itemView.findViewById(R.id.textView2);
-        }
 
-        void bindData(SearchPojo sj) {
-            String s = sj.getmType() == 1 ? "Tracks" : "Album";
-            mTrackName.setText(sj.getTitle());
-            mTrackDetail.setText(sj.getArtist());
-        }
-    }
+            mImg = (ImageView) itemView.findViewById(R.id.image);
+            mAlbum = (TextView) itemView.findViewById(R.id.album_name);
+            mArtist = (TextView) itemView.findViewById(R.id.album_artist);
 
-    protected class TrackHolder2 extends RecyclerView.ViewHolder {
-        public final View mView;
-        TextView mHeader, mBaser;
-        ImageView mImageView;
-
-        public TrackHolder2(View itemView) {
-            super(itemView);
-            mView = itemView;
             mHeader = (TextView) itemView.findViewById(R.id.textView9);
-            mImageView = (ImageView) itemView.findViewById(R.id.album_list_img);
-        }
-
-        void bindData(SearchPojo sj) {
-            mView.setBackgroundColor(Color.parseColor("#1e232e"));
-            String s = sj.getmType() == 1 ? "Tracks" : "Album";
-            mHeader.setText(s);
         }
     }
 }
-
 

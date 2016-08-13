@@ -25,8 +25,8 @@ import android.graphics.Paint;
 public final class BitmapUtils {
 
     /* Initial blur radius. */
-    private static final int DEFAULT_BLUR_RADIUS = 15;
-
+    private static final int DEFAULT_BLUR_RADIUS = 5;
+public static ExeTimeCalculator etc = new ExeTimeCalculator();
     /**
      * This class is never instantiated
      */
@@ -36,14 +36,15 @@ public final class BitmapUtils {
     /**
      * Takes a bitmap and creates a new slightly blurry version of it.
      *
-     * @param sentBitmap The {@link Bitmap} to blur.
+     * @param   {@link Bitmap} to blur.
      * @return A blurred version of the given {@link Bitmap}.
      */
-    public static final Bitmap createBlurredBitmap(final Bitmap sentBitmap) {
-        if (sentBitmap == null) {
+    public static final Bitmap createBlurredBitmap(final Bitmap msentBitmap) {
+        etc.addTimeFrame("A");
+        if (msentBitmap == null) {
             return null;
         }
-
+        Bitmap sentBitmap = resizeAndCropCenter(msentBitmap, 160);
         final Bitmap mBitmap = sentBitmap.copy(sentBitmap.getConfig(), true);
 
         final int w = mBitmap.getWidth();
@@ -222,6 +223,8 @@ public final class BitmapUtils {
         }
 
         mBitmap.setPixels(pix, 0, w, 0, 0, w, h);
+        etc.addTimeFrame("B");
+        etc.printDifference();
         return mBitmap;
     }
 

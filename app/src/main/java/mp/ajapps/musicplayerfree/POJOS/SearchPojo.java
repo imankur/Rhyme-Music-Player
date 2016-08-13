@@ -4,10 +4,21 @@ package mp.ajapps.musicplayerfree.POJOS;
  * Created by Sharing Happiness on 12/11/2015.
  */
 public class SearchPojo {
-    private String title, artist, mId = null, album_art;
-    private int mType;
+    String title, artist,  album_art;
+    int mType;
+    long mId = 0;
 
     public SearchPojo() {
+    }
+
+    public SearchPojo(String title, String artist, long mId,
+                      String album_art, int mType) {
+        super();
+        this.title = title;
+        this.artist = artist;
+        this.mId = mId;
+        this.album_art = album_art;
+        this.mType = mType;
     }
 
     public String getAlbum_art() {
@@ -46,11 +57,11 @@ public class SearchPojo {
         this.mType = mType;
     }
 
-    public String getmId() {
+    public long getmId() {
         return mId;
     }
 
-    public void setmId(String mId) {
+    public void setmId(long mId) {
         this.mId = mId;
     }
 }

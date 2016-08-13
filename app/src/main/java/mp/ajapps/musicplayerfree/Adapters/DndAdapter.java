@@ -44,7 +44,7 @@ public class DndAdapter extends RecyclerView.Adapter<DndAdapter.TrackHolder> imp
     public void onBindViewHolder(final TrackHolder holder, final int position) {
         Song mSong = mSongList.get(position);
         holder.mTrackName.setText(mSong.mSongName);
-        holder.mTrackDetail.setText(mSong.mSongId+"");
+        holder.mTrackDetail.setText(mSong.mAlbumName+"");
         holder.mView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {

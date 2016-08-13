@@ -1,0 +1,46 @@
+<RelativeLayout android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="10dp"
+    android:orientation="vertical"
+    android:background="?android:attr/selectableItemBackground"
+    android:clickable="true" android:drawSelectorOnTop="true"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="8dp"
+        android:textColor="#2d2d2d"
+        android:textSize="16sp"
+        android:layout_marginLeft="4dp"
+        android:id="@+id/title1" />
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:textSize="18sp"
+        android:paddingLeft="14dp"
+        android:textColor="#2d2d2d"
+        android:layout_toRightOf="@id/title1"
+        android:id="@+id/title" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_below="@id/title"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:paddingLeft="16dp"
+        android:layout_toRightOf="@id/title1"
+        android:textSize="15sp"
+        android:id="@+id/imageButton" />
+
+    <ImageView
+        android:id="@+id/song_item_menu"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+
+        android:padding="5dp"
+        android:src="@drawable/abc_ic_menu_moreoverflow_mtrl_alpha"
+        android:theme="@style/Theme.AppCompat" />
+
+</RelativeLayout>

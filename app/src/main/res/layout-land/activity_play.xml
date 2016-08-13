@@ -5,12 +5,17 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     tools:context="mp.ajapps.musicplayerfree.Play.Play_Activity"
     android:id="@+id/fragLay">
-    
-        <fragment
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            class="mp.ajapps.musicplayerfree.Play.PlayFragment"
-            tools:layout="@layout/fragment_play" />
+        <ImageView
+        android:layout_width="match_parent"
+        android:id="@+id/myll"
+        android:alpha=".50"
+        android:scaleType="centerCrop"
+        android:layout_height="match_parent" />
+    <mp.ajapps.musicplayerfree.Widgets.VerticalViewPager
+        android:layout_width="match_parent"
+        android:id="@+id/mViewp"
+        android:layout_height="match_parent">
+    </mp.ajapps.musicplayerfree.Widgets.VerticalViewPager>
         <android.support.v7.widget.Toolbar
             android:id="@+id/my_toolbar"
             android:layout_height="wrap_content"
@@ -29,7 +34,17 @@
             android:id="@+id/textView8" />
 
     </android.support.v7.widget.Toolbar>
-
+    <ImageButton
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingTop="10dp"
+        android:paddingLeft="10dp"
+        android:paddingRight="10dp"
+        android:text="New Button"
+        android:background="@android:color/transparent"
+        android:src="@drawable/ic_navigation_expand_less"
+        android:id="@+id/button"
+        android:layout_gravity="center_horizontal|bottom" />
 
 
 
