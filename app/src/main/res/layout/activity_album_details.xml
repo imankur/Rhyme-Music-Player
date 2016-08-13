@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <android.support.design.widget.CoordinatorLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    android:background="@android:color/white"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
+    android:background="#121214"
     android:layout_height="match_parent" android:fitsSystemWindows="true"
     tools:context="mp.ajapps.musicplayerfree.Activity.Album_Details">
 
@@ -19,6 +19,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:fitsSystemWindows="true"
+            app:expandedTitleTextAppearance="@android:color/transparent"
             app:expandedTitleMarginStart="64dp"
             app:layout_scrollFlags="scroll|exitUntilCollapsed">
 
@@ -26,12 +27,41 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:scaleType="fitXY"
+                android:layout_marginBottom="55dp"
                 android:src="@drawable/default_artwork"
+                android:minHeight="168dp"
                 android:transitionName="art"
                 app:layout_collapseMode="parallax"
                 android:id="@+id/image"
                 android:fitsSystemWindows="true"
                 app:layout_collapseParallaxMultiplier="0.7" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:id="@+id/labelLay"
+                android:gravity="center_vertical"
+                android:layout_marginTop="56dp"
+                android:layout_gravity="bottom"
+                android:background="@drawable/album_back"
+                android:layout_height="56dp"
+                android:paddingLeft="50dp"
+                android:orientation="vertical">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@android:color/white"
+                    android:singleLine="true"
+                    android:textAppearance="?android:attr/textAppearanceMedium"
+                    android:text="Medium Text"
+                    android:id="@+id/albumName" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:singleLine="true"
+                    android:textAppearance="?android:attr/textAppearanceSmall"
+                    android:text="Small Text"
+                    android:id="@+id/textView10" />
+            </LinearLayout>
 
         <android.support.v7.widget.Toolbar
             android:id="@+id/toolbar"
@@ -41,35 +71,9 @@
             app:layout_collapseMode="pin"
             app:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
             app:popupTheme="@style/ThemeOverlay.AppCompat.Light">
-
             </android.support.v7.widget.Toolbar>
-
         </android.support.design.widget.CollapsingToolbarLayout>
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:id="@+id/labelLay"
-            android:layout_height="wrap_content"
-            android:padding="20dp"
-            android:orientation="vertical">
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textColor="@android:color/white"
-                android:singleLine="true"
-                android:textAppearance="?android:attr/textAppearanceMedium"
-                android:text="Medium Text"
-                android:id="@+id/albumName" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:singleLine="true"
-                android:textAppearance="?android:attr/textAppearanceSmall"
-                android:text="Small Text"
-                android:id="@+id/textView10" />
-        </LinearLayout>
     </android.support.design.widget.AppBarLayout>
-
 
     <android.support.v7.widget.RecyclerView
         android:layout_width="match_parent"
@@ -86,7 +90,7 @@
         android:id="@+id/fab"
         app:layout_anchor="@id/appBarLay"
         app:layout_anchorGravity="bottom|right|end"
-        android:src="@drawable/ic_play"
+        android:src="@drawable/btn_playback_play"
         android:layout_margin="@dimen/fab_margin"
         android:clickable="true"/>
 </android.support.design.widget.CoordinatorLayout>

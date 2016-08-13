@@ -5,20 +5,31 @@ import android.provider.BaseColumns;
 import android.provider.MediaStore;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.util.SparseBooleanArray;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import mp.ajapps.musicplayerfree.R;
 
 /**
  * Created by Sharing Happiness on 6/17/2015.
  */
-public class TrackAdapter extends RecyclerView.Adapter<TrackAdapter.TrackHolder > {
+public class TrackAdapter extends RecyclerView.Adapter<TrackAdapter.TrackHolder> {
     Cursor dataCursor;
     int rowId;
     private myOnCLickInterface mMyOnClick;
+    private SparseBooleanArray selectedItems;
+
+    public TrackAdapter(int id, myOnCLickInterface m) {
+        this.rowId = id;
+        this.mMyOnClick = m;
+        selectedItems = new SparseBooleanArray();
+    }
 
     @Override
     public TrackHolder onCreateViewHolder(ViewGroup parent, int viewType) {
@@ -26,11 +37,6 @@ public class TrackAdapter extends RecyclerView.Adapter<TrackAdapter.TrackHolder 
         View v = LayoutInflater.from(parent.getContext())
                 .inflate(rowId, parent, false);
         return new TrackHolder(v);
-    }
-
-    public TrackAdapter(int id, myOnCLickInterface m) {
-        this.rowId=id;
-        this.mMyOnClick = m;
     }
 
     @Override
@@ -41,10 +47,16 @@ public class TrackAdapter extends RecyclerView.Adapter<TrackAdapter.TrackHolder 
         holder.mView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(null != mMyOnClick) {
-
+                if (null != mMyOnClick) {
                     mMyOnClick.myOnClick(position);
                 }
+            }
+        });
+        holder.mView.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                mMyOnClick.myOnLongClick(position);
+                return true;
             }
         });
     }
@@ -73,9 +85,15 @@ public class TrackAdapter extends RecyclerView.Adapter<TrackAdapter.TrackHolder 
         return oldCursor;
     }
 
+    public interface myOnCLickInterface {
+        public void myOnClick(int pos);
+        public void myOnLongClick(int pos);
+    }
+
     protected class TrackHolder extends RecyclerView.ViewHolder {
-        TextView mTrackName, mTrackDetail;
         public final View mView;
+        TextView mTrackName, mTrackDetail;
+
         public TrackHolder(View itemView) {
             super(itemView);
             mView = itemView;
@@ -84,8 +102,33 @@ public class TrackAdapter extends RecyclerView.Adapter<TrackAdapter.TrackHolder 
         }
     }
 
-    public interface myOnCLickInterface {
-        public void myOnClick(int pos);
+    public void toggleSelection(int pos) {
+        if (selectedItems.get(pos, false)) {
+            selectedItems.delete(pos);
+        } else {
+            selectedItems.put(pos, true);
+        }
+        notifyItemChanged(pos);
+    }
+
+    public void clearSelections() {
+        selectedItems.clear();
+        notifyDataSetChanged();
+    }
+
+    public int getSelectedItemCount() {
+        return selectedItems.size();
+    }
+
+    public long[] getSelectedItems() {
+        int colidx = -1;
+            colidx = dataCursor.getColumnIndexOrThrow(BaseColumns._ID);
+        long [] items = new long[selectedItems.size()];
+        for (int i = 0; i < selectedItems.size(); i++) {
+            dataCursor.moveToPosition(selectedItems.keyAt(i));
+            items[i] = dataCursor.getLong(colidx);
+        }
+        return items;
     }
 }
 

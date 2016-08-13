@@ -5,8 +5,13 @@
         <!-- Customize your theme here. -->
         <item name="colorPrimary">#1e232e</item>
         <item name="colorPrimaryDark">#11151d</item>
+        <item name="colorAccent">#26a69a</item>
+        <item name="windowActionModeOverlay">true</item>
+        <item name="android:actionModeBackground">@color/cool</item>
 
     </style>
+
+
 
     <style name="AppThemeTrans" parent="Theme.AppCompat.NoActionBar">
         <item name="android:actionBarStyle">@style/ThemeActionBar</item>
@@ -37,5 +42,11 @@
     <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
     <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
 
+    <style name="AppCompatAlertDialogStyle" parent="Theme.AppCompat.Light.Dialog.Alert">
 
+        <item name="android:titleTextColor">#1e232e</item>
+        <item name="android:background">@android:color/white</item>
+        <item name="android:padding">4dp</item>
+
+    </style>
 </resources>

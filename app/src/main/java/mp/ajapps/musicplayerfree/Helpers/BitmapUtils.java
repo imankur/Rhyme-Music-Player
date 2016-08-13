@@ -19,21 +19,23 @@ import android.graphics.Paint;
 
 /**
  * {@link Bitmap} specific helpers.
- * 
+ *
  * @author Andrew Neal (andrewdneal@gmail.com)
  */
 public final class BitmapUtils {
 
     /* Initial blur radius. */
-    private static final int DEFAULT_BLUR_RADIUS =15;
+    private static final int DEFAULT_BLUR_RADIUS = 15;
 
-    /** This class is never instantiated */
+    /**
+     * This class is never instantiated
+     */
     private BitmapUtils() {
     }
 
     /**
      * Takes a bitmap and creates a new slightly blurry version of it.
-     * 
+     *
      * @param sentBitmap The {@link Bitmap} to blur.
      * @return A blurred version of the given {@link Bitmap}.
      */
@@ -225,12 +227,12 @@ public final class BitmapUtils {
 
     /**
      * This is only used when the launcher shortcut is created.
-     * 
+     *
      * @param bitmap The artist, album, genre, or playlist image that's going to
-     *            be cropped.
-     * @param size The new size.
+     *               be cropped.
+     * @param size   The new size.
      * @return A {@link Bitmap} that has been resized and cropped for a launcher
-     *         shortcut.
+     * shortcut.
      */
     public static final Bitmap resizeAndCropCenter(final Bitmap bitmap, final int size) {
         final int w = bitmap.getWidth();
@@ -239,7 +241,7 @@ public final class BitmapUtils {
             return bitmap;
         }
 
-        final float mScale = (float)size / Math.min(w, h);
+        final float mScale = (float) size / Math.min(w, h);
 
         final Bitmap mTarget = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
         final int mWidth = Math.round(mScale * bitmap.getWidth());

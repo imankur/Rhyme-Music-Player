@@ -39,7 +39,7 @@ public class ExeTimeCalculator {
             aFrame = bFrame;
             bFrame = null;
         }
-        mResult.append("Total time : ").append(mFrames.get(mFrames.size()-1).getmTime() - mFrames.get(0).getmTime());
+        mResult.append("Total time : ").append(mFrames.get(mFrames.size() - 1).getmTime() - mFrames.get(0).getmTime());
         System.out.println(mResult.toString());
     }
 

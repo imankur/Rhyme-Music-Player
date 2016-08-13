@@ -4,6 +4,6 @@
     <dimen name="activity_vertical_margin">4dp</dimen>
     <dimen name="fab_margin">16dp</dimen>
     <dimen name="text_margin">16dp</dimen>
-    <dimen name="textry">50dp</dimen>
-    <dimen name="textry2">50dp</dimen>
+    <dimen name="up_dimen">50dp</dimen>
+    <dimen name="album_grid_height">180dp</dimen>
 </resources>

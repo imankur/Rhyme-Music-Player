@@ -2,8 +2,6 @@ package mp.ajapps.musicplayerfree.Widgets;
 
 import android.content.Context;
 import android.util.AttributeSet;
-import android.view.View;
-import android.view.ViewGroup;
 import android.widget.LinearLayout;
 
 /**
@@ -13,7 +11,7 @@ public class SquareView extends LinearLayout {
 
     /**
      * @param context The {@link Context} to use
-     * @param attrs The attributes of the XML tag that is inflating the view.
+     * @param attrs   The attributes of the XML tag that is inflating the view.
      */
     public SquareView(final Context context, final AttributeSet attrs) {
         super(context, attrs);
@@ -24,7 +22,7 @@ public class SquareView extends LinearLayout {
      */
     @Override
     protected void onMeasure(final int widthMeasureSpec, final int heightMeasureSpec) {
-       super.onMeasure(widthMeasureSpec,widthMeasureSpec);
+        super.onMeasure(widthMeasureSpec, widthMeasureSpec);
     }
 
     /**

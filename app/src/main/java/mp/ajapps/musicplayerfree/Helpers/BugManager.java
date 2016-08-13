@@ -1,17 +1,9 @@
 package mp.ajapps.musicplayerfree.Helpers;
 
-        import android.content.Context;
-        import android.content.pm.PackageInfo;
-        import android.content.pm.PackageManager;
-        import android.os.Build;
-        import android.os.StrictMode;
-        import android.util.Log;
-
-
-        import org.json.JSONObject;
-
-        import java.util.HashMap;
-        import java.util.Map;
+import android.content.Context;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.os.Build;
 
 
 public class BugManager {
@@ -23,13 +15,6 @@ public class BugManager {
     private static BugManager mInstance;
     private static String mOs;
 
-    public static BugManager getInstance(Context context, String token) {
-        if (mInstance == null) {
-            mInstance = new BugManager(context, token);
-        }
-        return mInstance;
-    }
-
     protected BugManager(Context context, String token) {
         this.mContext = context.getApplicationContext();
         this.mToken = token;
@@ -38,10 +23,18 @@ public class BugManager {
         try {
             PackageInfo info = manager.getPackageInfo(context.getPackageName(), 0);
             mAppVersionCode = info.versionCode + "(" + info.versionName + ")";
-        } catch (PackageManager.NameNotFoundException se) {}
+        } catch (PackageManager.NameNotFoundException se) {
+        }
 
         mOs = Build.VERSION.RELEASE;
         mDevice = Build.MANUFACTURER + " " + Build.MODEL + "(" + Build.DEVICE + ")";
+    }
+
+    public static BugManager getInstance(Context context, String token) {
+        if (mInstance == null) {
+            mInstance = new BugManager(context, token);
+        }
+        return mInstance;
     }
 
     public static void reportLog(String log) {
@@ -103,7 +96,6 @@ public class BugManager {
 
         Volley.newRequestQueue(mContext).add(mRequest);*/
     }
-
 
 
 }

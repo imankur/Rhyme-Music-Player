@@ -2,24 +2,16 @@ package mp.ajapps.musicplayerfree.Adapters;
 
 import android.content.Context;
 import android.database.Cursor;
-import android.graphics.Bitmap;
 import android.provider.MediaStore;
-import android.support.v7.graphics.Palette;
-import android.util.Log;
-import android.util.LruCache;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.nostra13.universalimageloader.core.DisplayImageOptions;
 import com.nostra13.universalimageloader.core.ImageLoader;
-import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
-import com.nostra13.universalimageloader.core.listener.SimpleImageLoadingListener;
 
 import java.lang.ref.WeakReference;
 
@@ -31,12 +23,12 @@ import mp.ajapps.musicplayerfree.R;
 public class AlbumAdapter extends BaseAdapter {
     Context context;
     Cursor mCursor;
+    ImageLoader imageLoader;
+    DisplayImageOptions options;
     private int mAlbumIdx;
     private int mArtistIdx;
     private int mAlbumArtIndex;
-    ImageLoader imageLoader;
 
-    DisplayImageOptions options;
     public AlbumAdapter(Context context) {
         this.context = context;
     }
@@ -89,8 +81,8 @@ public class AlbumAdapter extends BaseAdapter {
             viewholder.image.get().setImageResource(R.drawable.default_artwork);
         } else {
             viewholder = new Viewholder();
-            convertView = inflater.inflate(R.layout.grid_item,null);
-            viewholder.image = new WeakReference<ImageView>((ImageView)convertView.findViewById(R.id.image));
+            convertView = inflater.inflate(R.layout.grid_item, null);
+            viewholder.image = new WeakReference<ImageView>((ImageView) convertView.findViewById(R.id.image));
             viewholder.malbumArtist = new WeakReference<TextView>((TextView) convertView.findViewById(R.id.album_artist));
             viewholder.malbumName = new WeakReference<TextView>((TextView) convertView.findViewById(R.id.album_name));
             convertView.setTag(viewholder);
@@ -101,10 +93,6 @@ public class AlbumAdapter extends BaseAdapter {
         viewholder.malbumName.get().setText(this.mCursor.getString(mAlbumIdx));
         return convertView;
     }
-    private class Viewholder{
-        WeakReference<ImageView> image;
-        WeakReference<TextView> malbumName, malbumArtist;
-    }
 
     private void getColumnIndices(Cursor cursor) {
         if (cursor != null) {
@@ -112,6 +100,11 @@ public class AlbumAdapter extends BaseAdapter {
             mArtistIdx = cursor.getColumnIndexOrThrow(MediaStore.Audio.Albums.ARTIST);
             mAlbumArtIndex = cursor.getColumnIndexOrThrow(MediaStore.Audio.Albums.ALBUM_ART);
         }
+    }
+
+    private class Viewholder {
+        WeakReference<ImageView> image;
+        WeakReference<TextView> malbumName, malbumArtist;
     }
 
 }

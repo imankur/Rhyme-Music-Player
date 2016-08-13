@@ -6,30 +6,29 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.RemoteException;
 import android.provider.MediaStore;
 import android.support.v4.app.Fragment;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
 
-import com.nostra13.universalimageloader.core.DisplayImageOptions;
 import com.nostra13.universalimageloader.core.ImageLoader;
 
 import mp.ajapps.musicplayerfree.Helpers.MusicUtils;
-import mp.ajapps.musicplayerfree.Models.AlbumArtistDetails;
+import mp.ajapps.musicplayerfree.POJOS.AlbumArtistDetails;
 import mp.ajapps.musicplayerfree.R;
 import mp.ajapps.musicplayerfree.Widgets.SquareImageView;
 
 public class AlbumArtFragment extends Fragment {
-    private static final String ID = AlbumArtFragment.class.getName();
     public static final long NO_TRACK_ID = -1;
-    private long mAudioId = NO_TRACK_ID;
-    private AlbumArtistLoader mTask;
+    private static final String ID = AlbumArtFragment.class.getName();
     public SquareImageView mImageView;
     View mRootView;
+    private long mAudioId = NO_TRACK_ID;
+    private AlbumArtistLoader mTask;
+
+    public AlbumArtFragment() {
+    }
 
     public static AlbumArtFragment newInstance(final long trackId) {
         AlbumArtFragment fragment = new AlbumArtFragment();
@@ -39,7 +38,19 @@ public class AlbumArtFragment extends Fragment {
         return fragment;
     }
 
-    public AlbumArtFragment() {}
+    private static Cursor openCursorAndGoToFirst(Context con, Uri uri, String[] projection,
+                                                 String selection, String[] selectionArgs) {
+        Cursor c = con.getContentResolver().query(uri, projection,
+                selection, selectionArgs, null, null);
+        if (c == null) {
+            return null;
+        }
+        if (!c.moveToFirst()) {
+            c.close();
+            return null;
+        }
+        return c;
+    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -62,22 +73,8 @@ public class AlbumArtFragment extends Fragment {
         mTask.execute(mAudioId);
     }
 
-    public void loadImage (String s) {
-        ImageLoader.getInstance().displayImage( s, mImageView);
-    }
-
-    private static Cursor openCursorAndGoToFirst(Context con, Uri uri, String[] projection,
-                                                 String selection, String[] selectionArgs) {
-        Cursor c = con.getContentResolver().query(uri, projection,
-                selection, selectionArgs, null, null);
-        if (c == null) {
-            return null;
-        }
-        if (!c.moveToFirst()) {
-            c.close();
-            return null;
-        }
-        return c;
+    public void loadImage(String s) {
+        ImageLoader.getInstance().displayImage(s, mImageView);
     }
 
     public static class AlbumArtistLoader extends AsyncTask<Long, Void, AlbumArtistDetails> {
@@ -86,7 +83,7 @@ public class AlbumArtFragment extends Fragment {
 
         public AlbumArtistLoader(AlbumArtFragment fm, final Context context) {
             mContext = context;
-            this.fragments  = fm;
+            this.fragments = fm;
         }
 
         @Override
@@ -98,8 +95,8 @@ public class AlbumArtFragment extends Fragment {
         @Override
         protected void onPostExecute(final AlbumArtistDetails result) {
             if (result != null) {
-               Cursor mAlbumCursor = null;
-                String[] ALBUM_PROJECTION = new String[] {
+                Cursor mAlbumCursor = null;
+                String[] ALBUM_PROJECTION = new String[]{
                         MediaStore.Audio.Albums.ALBUM_ART
                 };
                 if (result.mAlbumId >= 0) {

@@ -8,4 +8,16 @@
         android:icon="@drawable/ic_menu_search_mtrl_alpha"
         android:title="Search"
         app:showAsAction="always" />
+    <item
+        android:id="@+id/action_shuffle"
+        android:icon="@drawable/ic_av_shuffle"
+        android:title="Shuffle"
+        app:showAsAction="always" />
+    <item
+        android:id="@+id/action_playlist"
+        android:icon="@drawable/ic_content_add"
+        android:title="Add Playlist"
+        android:visible="false"
+        app:showAsAction="always" />
+
 </menu>

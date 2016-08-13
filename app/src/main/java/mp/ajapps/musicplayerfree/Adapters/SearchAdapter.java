@@ -1,18 +1,16 @@
 package mp.ajapps.musicplayerfree.Adapters;
 
-import android.database.Cursor;
 import android.graphics.Color;
-import android.provider.MediaStore;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import java.util.ArrayList;
 
-import mp.ajapps.musicplayerfree.Models.SearchPojo;
+import mp.ajapps.musicplayerfree.POJOS.SearchPojo;
 import mp.ajapps.musicplayerfree.R;
 
 /**
@@ -23,23 +21,26 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
     int rowId;
     private myOnCLickInterface mMyOnClick;
 
+    public SearchAdapter(int id, myOnCLickInterface m) {
+        this.rowId = id;
+        this.mMyOnClick = m;
+    }
+
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         if (viewType == 3 || viewType == 4) {
             View v = LayoutInflater.from(parent.getContext())
                     .inflate(rowId, parent, false);
             return new TrackHolder1(v);
-        } else if (viewType == 1 || viewType == 2) {
+        } else if (viewType == 1) {
+            View v = LayoutInflater.from(parent.getContext())
+                    .inflate(R.layout.header_row, parent, false);
+            return new TrackHolder2(v);
+        } else {
             View v = LayoutInflater.from(parent.getContext())
                     .inflate(R.layout.header_row, parent, false);
             return new TrackHolder2(v);
         }
-        return null;
-    }
-
-    public SearchAdapter(int id, myOnCLickInterface m) {
-        this.rowId=id;
-        this.mMyOnClick = m;
     }
 
     @Override
@@ -49,9 +50,9 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
         final String id = temp.getmId();
 
         if (holder instanceof TrackHolder1) {
-            ((TrackHolder1)holder).bindData(temp);
+            ((TrackHolder1) holder).bindData(temp);
         } else if (holder instanceof TrackHolder2) {
-            ((TrackHolder2)holder).bindData(temp);
+            ((TrackHolder2) holder).bindData(temp);
         }
        /* holder.mView.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -70,7 +71,7 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
 
     public void changeCursor(ArrayList<SearchPojo> cursor) {
         if (mList != null)
-        this.mList.clear();
+            this.mList.clear();
         this.mList = cursor;
     }
 
@@ -79,9 +80,14 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
         return mList.get(position).getmType();
     }
 
+    public interface myOnCLickInterface {
+        public void myOnClick(int type, String id);
+    }
+
     protected class TrackHolder1 extends RecyclerView.ViewHolder {
-        TextView mTrackName, mTrackDetail;
         public final View mView;
+        TextView mTrackName, mTrackDetail;
+
         public TrackHolder1(View itemView) {
             super(itemView);
             mView = itemView;
@@ -89,7 +95,7 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
             mTrackDetail = (TextView) itemView.findViewById(R.id.textView2);
         }
 
-         void bindData(SearchPojo sj) {
+        void bindData(SearchPojo sj) {
             String s = sj.getmType() == 1 ? "Tracks" : "Album";
             mTrackName.setText(sj.getTitle());
             mTrackDetail.setText(sj.getArtist());
@@ -97,23 +103,22 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
     }
 
     protected class TrackHolder2 extends RecyclerView.ViewHolder {
-        TextView mHeader;
         public final View mView;
+        TextView mHeader, mBaser;
+        ImageView mImageView;
+
         public TrackHolder2(View itemView) {
             super(itemView);
             mView = itemView;
             mHeader = (TextView) itemView.findViewById(R.id.textView9);
+            mImageView = (ImageView) itemView.findViewById(R.id.album_list_img);
         }
 
-         void bindData(SearchPojo sj) {
-             mView.setBackgroundColor(Color.parseColor("#1e232e"));
-             String s = sj.getmType() == 1 ? "Tracks" : "Album";
-             mHeader.setText(s);
+        void bindData(SearchPojo sj) {
+            mView.setBackgroundColor(Color.parseColor("#1e232e"));
+            String s = sj.getmType() == 1 ? "Tracks" : "Album";
+            mHeader.setText(s);
         }
-    }
-
-    public interface myOnCLickInterface {
-        public void myOnClick(int type, String id);
     }
 }
 

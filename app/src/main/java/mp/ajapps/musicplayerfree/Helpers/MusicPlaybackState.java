@@ -5,16 +5,15 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
-import android.text.TextUtils;
-import android.util.Config;
 import android.util.Log;
 
 /**
  * Created by Sharing Happiness on 8/9/2015.
  */
 public class MusicPlaybackState extends SQLiteOpenHelper {
-    Context context;
     public static final String DATABASENAME = "musicdb.db";
+    Context context;
+
     public MusicPlaybackState(Context context) {
         super(context, DATABASENAME, null, 1);
         this.context = context;
@@ -52,14 +51,13 @@ public class MusicPlaybackState extends SQLiteOpenHelper {
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         db.execSQL("DROP TABLE IF EXISTS " + PlaybackQueueColumns.NAME);
-       // db.execSQL("DROP TABLE IF EXISTS " + PlaybackHistoryColumns.NAME);
+        // db.execSQL("DROP TABLE IF EXISTS " + PlaybackHistoryColumns.NAME);
         onCreate(db);
     }
 
     public synchronized void saveState(long[] list) {
         final SQLiteDatabase database = getWritableDatabase();
         database.beginTransaction();
-
         try {
             database.delete(PlaybackQueueColumns.NAME, null, null);
             database.setTransactionSuccessful();
@@ -79,20 +77,14 @@ public class MusicPlaybackState extends SQLiteOpenHelper {
         }
     }
 
-    public synchronized long[] getState () {
+    public synchronized long[] getState() {
         final SQLiteDatabase database = getReadableDatabase();
         long[] list = null;
         Cursor cursor = null;
         try {
             cursor = database.query(
-                    PlaybackQueueColumns.NAME,null, null, null, null, null, null);
+                    PlaybackQueueColumns.NAME, null, null, null, null, null, null);
             list = new long[cursor.getCount()];
-            if (cursor != null && cursor.moveToFirst()) {
-                for (int i = 0; i < cursor.getCount(); i++ ) {
-                    list[i] = cursor.getLong(0);
-                }
-            }
-
             int i = 0;
             while (cursor.moveToNext()) {
                 list[i] = cursor.getLong(0);

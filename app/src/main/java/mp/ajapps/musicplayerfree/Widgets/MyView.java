@@ -14,6 +14,7 @@ import android.view.View;
 public class MyView extends View {
 
     Context c;
+
     public MyView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         c = context;
@@ -35,14 +36,14 @@ public class MyView extends View {
         int x = getWidth();
         int y = (int) Math.ceil(x * 0.6);
         Path path = new Path();
-        path.moveTo( 0, 0);
-        path.lineTo( x , 0);
-        path.lineTo( x, y/2);
-        path.lineTo( 0, y);
+        path.moveTo(0, 0);
+        path.lineTo(x, 0);
+        path.lineTo(x, y / 2);
+        path.lineTo(0, y);
         path.close();
 
         Paint p = new Paint();
-        p.setColor( Color.parseColor("#1e232e") );
+        p.setColor(Color.parseColor("#1e232e"));
         p.setAntiAlias(true);
 
         canvas.drawPath(path, p);

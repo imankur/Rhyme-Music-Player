@@ -4,5 +4,7 @@
     <color name="rounded_container_bg">#222222</color>
     <color name="rounded_container_border">#3b3f44</color>
     <color name="light_gray_header_color">#a2a2a2</color>
-    <color name="accent_material_dark">#40ffff</color>
+
+
+    <color name="cool">#333c4f</color>
 </resources>

@@ -4,20 +4,17 @@ import android.app.LoaderManager;
 import android.content.Context;
 import android.content.CursorLoader;
 import android.content.res.ColorStateList;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Color;
-import android.os.RemoteException;
-import android.support.design.widget.AppBarLayout;
-import android.support.design.widget.CollapsingToolbarLayout;
-import android.support.design.widget.CoordinatorLayout;
-import android.support.v4.app.NavUtils;
-import android.support.v4.content.Loader;
-import android.database.Cursor;
 import android.os.Bundle;
 import android.provider.BaseColumns;
 import android.provider.MediaStore;
+import android.support.design.widget.AppBarLayout;
+import android.support.design.widget.CollapsingToolbarLayout;
+import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
+import android.support.v4.view.ViewCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.graphics.Palette;
 import android.support.v7.widget.DefaultItemAnimator;
@@ -36,22 +33,23 @@ import com.nostra13.universalimageloader.core.ImageLoader;
 import com.nostra13.universalimageloader.core.assist.FailReason;
 import com.nostra13.universalimageloader.core.listener.ImageLoadingListener;
 
+import mp.ajapps.musicplayerfree.Adapters.Album_Details_Adapter;
 import mp.ajapps.musicplayerfree.Adapters.TrackAdapter;
 import mp.ajapps.musicplayerfree.Helpers.MusicUtils;
-import mp.ajapps.musicplayerfree.Helpers.RecyclerItemClickListener;
 import mp.ajapps.musicplayerfree.R;
 
-public class Album_Details extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor>, TrackAdapter.myOnCLickInterface {
+public class Album_Details extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor>, Album_Details_Adapter.myOnCLickInterface {
+    protected LinearLayoutManager mLayoutManager;
+    protected Album_Details_Adapter mAdpt;
     ImageView mImg;
     TextView mAlbum;
     RecyclerView recyclerView;
     Toolbar toolbar;
     FloatingActionButton fab;
     LinearLayout mLabelLayout;
-    Long albumId;CollapsingToolbarLayout ctl;
+    Long albumId;
+    CollapsingToolbarLayout ctl;
     Cursor mCursor;
-    protected LinearLayoutManager mLayoutManager;
-    protected TrackAdapter mAdpt;
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -65,12 +63,12 @@ public class Album_Details extends AppCompatActivity implements LoaderManager.Lo
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setDisplayShowHomeEnabled(true);
-        Bundle mBundle = getIntent().getExtras();
+        final Bundle mBundle = getIntent().getExtras();
         albumId = mBundle.getLong("id");
         mLabelLayout = (LinearLayout) findViewById(R.id.labelLay);
         ctl = (CollapsingToolbarLayout) findViewById(R.id.collapsingToolbarLayout);
         String v = "file:///" + mBundle.get("art");
-        getLoaderManager().initLoader(0,null,this);
+        getLoaderManager().initLoader(0, null, this);
         mImg = (ImageView) findViewById(R.id.image);
         mAlbum = (TextView) findViewById(R.id.albumName);
         mLayoutManager = new LinearLayoutManager(this);
@@ -79,7 +77,7 @@ public class Album_Details extends AppCompatActivity implements LoaderManager.Lo
         recyclerView = (RecyclerView) findViewById(R.id.view3);
         recyclerView.setLayoutManager(mLayoutManager);
         recyclerView.setItemAnimator(new DefaultItemAnimator());
-        mAdpt = new TrackAdapter(R.layout.track_row_white, this);
+        mAdpt = new Album_Details_Adapter(this);
         recyclerView.setAdapter(mAdpt);
         ImageLoader.getInstance().displayImage(v, mImg, new ImageLoadingListener() {
             @Override
@@ -96,7 +94,7 @@ public class Album_Details extends AppCompatActivity implements LoaderManager.Lo
             public void onLoadingComplete(String imageUri, View view, Bitmap loadedImage) {
                 Palette p = Palette.from(loadedImage).generate();
                 mLabelLayout.setBackgroundColor(p.getDarkMutedColor(Color.DKGRAY));
-                //  ctl.setContentScrimColor(p.getLightVibrantColor(Color.BLUE));
+                //ctl.setContentScrimColor(p.getDarkMutedColor(Color.DKGRAY));
             }
 
             @Override
@@ -104,25 +102,36 @@ public class Album_Details extends AppCompatActivity implements LoaderManager.Lo
 
             }
         });
+        final String s =  mBundle.get("album") + "";
         mAlbum.setText(mBundle.get("album") + "");
-
-
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                MusicUtils.setAndPlay(mCursor,0);
+                MusicUtils.setAndPlay(mCursor, 0);
             }
         });
+
+        AppBarLayout.OnOffsetChangedListener mListener = new AppBarLayout.OnOffsetChangedListener() {
+            @Override
+            public void onOffsetChanged(AppBarLayout appBarLayout, int verticalOffset) {
+                if(ctl.getHeight() + verticalOffset < 2 * ViewCompat.getMinimumHeight(ctl)) {
+                    //ctl.setBackgroundResource();
+                } else {
+                    ctl.setBackgroundResource(R.drawable.album_back);
+                }
+            }
+        };
+
+        abl.addOnOffsetChangedListener(mListener);
     }
 
     @Override
     public android.content.Loader<Cursor> onCreateLoader(int id, Bundle args) {
-        Log.i("oyo", "dfgggg");
         final StringBuilder selection = new StringBuilder();
         selection.append(MediaStore.Audio.AudioColumns.IS_MUSIC + "=1");
         selection.append(" AND " + MediaStore.Audio.AudioColumns.TITLE + " != ''");
         selection.append(" AND " + MediaStore.Audio.AudioColumns.ALBUM_ID + "=" + albumId);
-        return new CursorLoader(this,MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,new String[] {
+        return new CursorLoader(this, MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, new String[]{
                         /* 0 */
                 BaseColumns._ID,
                         /* 1 */
@@ -135,7 +144,7 @@ public class Album_Details extends AppCompatActivity implements LoaderManager.Lo
                 MediaStore.Audio.AudioColumns.DURATION,
                         /* 5 */
                 MediaStore.Audio.AudioColumns.YEAR,
-        },selection.toString(),null, null);
+        }, selection.toString(), null, null);
     }
 
     @Override
@@ -143,7 +152,7 @@ public class Album_Details extends AppCompatActivity implements LoaderManager.Lo
         if (data == null) {
             return;
         }
-        if(mCursor !=null) mCursor.close();
+        if (mCursor != null) mCursor.close();
         mAdpt.changeCursor(data);
         mAdpt.notifyDataSetChanged();
         mCursor = data;
@@ -173,7 +182,12 @@ public class Album_Details extends AppCompatActivity implements LoaderManager.Lo
 
     @Override
     public void myOnClick(int pos) {
-        MusicUtils.setAndPlay(mCursor,pos);
+        MusicUtils.setAndPlay(mCursor, pos);
+
+    }
+
+    @Override
+    public void myOnLongClick(int pos) {
 
     }
 

@@ -7,17 +7,18 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
 public class RecentStore extends SQLiteOpenHelper {
-    private static RecentStore mInstance;
     public static final String DATABASENAME = "musicdb.db";
+    private static RecentStore mInstance;
+
+    public RecentStore(Context context) {
+        super(context, DATABASENAME, null, 1);
+    }
 
     public static final synchronized RecentStore getInstance(final Context context) {
         if (mInstance == null) {
             mInstance = new RecentStore(context.getApplicationContext());
         }
         return mInstance;
-    }
-    public RecentStore(Context context) {
-        super(context, DATABASENAME, null, 1);
     }
 
     @Override
@@ -49,6 +50,7 @@ public class RecentStore extends SQLiteOpenHelper {
         database.setTransactionSuccessful();
         database.endTransaction();
     }
+
     public Cursor queryRecentIds() {
         final SQLiteDatabase database = getReadableDatabase();
         return database.query(RecentStoreColumns.NAME,
@@ -58,7 +60,7 @@ public class RecentStore extends SQLiteOpenHelper {
 
     public void removeItem(final long songId) {
         final SQLiteDatabase database = getWritableDatabase();
-          String WHERE_ID_EQUALS = RecentStoreColumns.ID + "=?";
+        String WHERE_ID_EQUALS = RecentStoreColumns.ID + "=?";
         database.delete(RecentStoreColumns.NAME, WHERE_ID_EQUALS, new String[]{String.valueOf(songId)});
     }
 

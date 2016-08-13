@@ -3,7 +3,6 @@ package mp.ajapps.musicplayerfree.Fragments;
 import android.content.Context;
 import android.database.Cursor;
 import android.os.Bundle;
-import android.provider.BaseColumns;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -19,7 +18,6 @@ import mp.ajapps.musicplayerfree.Helpers.CursorSorter;
 import mp.ajapps.musicplayerfree.Helpers.MusicUtils;
 import mp.ajapps.musicplayerfree.Helpers.RecentStore;
 import mp.ajapps.musicplayerfree.R;
-import mp.ajapps.musicplayerfree.Fragments.dummy.DummyContent.DummyItem;
 
 /**
  * A fragment representing a list of Items.
@@ -29,9 +27,9 @@ import mp.ajapps.musicplayerfree.Fragments.dummy.DummyContent.DummyItem;
  */
 public class RecentFragment extends Fragment implements TrackAdapter.myOnCLickInterface {
 
+    Cursor c;
     private LinearLayoutManager mLayoutManager;
     private TrackAdapter mAdpt;
-    Cursor c;
 
     public RecentFragment() {
     }
@@ -54,6 +52,7 @@ public class RecentFragment extends Fragment implements TrackAdapter.myOnCLickIn
         mLayoutManager = new LinearLayoutManager(getActivity());
         mLayoutManager.setOrientation(LinearLayoutManager.VERTICAL);
         mLayoutManager.setSmoothScrollbarEnabled(true);
+
         mRecycleView.setLayoutManager(mLayoutManager);
         mAdpt = new TrackAdapter(R.layout.track_row, this);
         c = makeRecentTracksCursor();
@@ -77,30 +76,29 @@ public class RecentFragment extends Fragment implements TrackAdapter.myOnCLickIn
 
     @Override
     public void myOnClick(int pos) {
-        MusicUtils.setAndPlay(c,pos);
+        MusicUtils.setAndPlay(c, pos);
     }
 
-    public Cursor getCursor () {
+    @Override
+    public void myOnLongClick(int pos) {
+
+    }
+
+    public Cursor getCursor() {
         CursorSorter cs = makeRecentTracksCursor();
         if (cs != null) {
             ArrayList<Long> missingIds = cs.getMissingIds();
             if (missingIds != null && missingIds.size() > 0) {
-                // for each unfound id, remove it from the database
-                // this codepath should only really be hit if the user removes songs
-                // outside of the Eleven app
                 for (long id : missingIds) {
-                        RecentStore.getInstance(this.getActivity()).removeItem(id);
-                    }
+                    RecentStore.getInstance(this.getActivity()).removeItem(id);
                 }
             }
-
-    return cs;
+        }
+        return cs;
     }
-    private CursorSorter makeRecentTracksCursor() {
-        // first get the top results ids from the internal database
 
+    private CursorSorter makeRecentTracksCursor() {
         Cursor songs = RecentStore.getInstance(this.getActivity()).queryRecentIds();
-        Log.i("xxxx", "onCreateView: " + songs.getCount());
         try {
             return MusicUtils.makeSortedCursor(this.getActivity(), songs,
                     songs.getColumnIndex("songid"));

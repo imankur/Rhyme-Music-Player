@@ -2,12 +2,10 @@ package mp.ajapps.musicplayerfree.Helpers;
 
 import android.database.AbstractCursor;
 import android.database.Cursor;
-import android.database.CursorWrapper;
 import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 
 /**
  * Created by Sharing Happiness on 11/22/2015.
@@ -33,17 +31,12 @@ public class CursorSorter extends AbstractCursor {
         ArrayList<Long> missingIds = new ArrayList<Long>();
         mMapCursorPositions = new HashMap<Long, Integer>(mCursor.getCount());
         mOrderedPositions = new ArrayList<Integer>(mCursor.getCount());
-        Log.i("finee", "buildCursorPositionMapping: " + mCursor.getCount());
         final int idPosition = mCursor.getColumnIndex(columnName);
 
         if (mCursor.moveToFirst()) {
-            // first figure out where each of the ids are in the cursor
             do {
                 mMapCursorPositions.put(mCursor.getLong(idPosition), mCursor.getPosition());
             } while (mCursor.moveToNext());
-
-            // now create the ordered positions to map to the internal cursor given the
-            // external sort order
             for (int i = 0; order != null && i < order.length; i++) {
                 final long id = order[i];
                 if (mMapCursorPositions.containsKey(id)) {
@@ -53,10 +46,8 @@ public class CursorSorter extends AbstractCursor {
                     missingIds.add(id);
                 }
             }
-
             mCursor.moveToFirst();
         }
-
         return missingIds;
     }
 

@@ -19,7 +19,7 @@
             android:layout_height="wrap_content"
             android:layout_width="match_parent"
             android:minHeight="?attr/actionBarSize"
-            app:layout_scrollFlags="scroll|enterAlways"
+            app:layout_scrollFlags="scroll|enterAlways|snap"
             app:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
             app:popupTheme="@style/ThemeOverlay.AppCompat.Light">
         </android.support.v7.widget.Toolbar>
@@ -27,12 +27,11 @@
             android:id="@+id/tabs_view"
             app:tabIndicatorColor="#d13915"
             android:layout_width="match_parent"
+            app:tabMode="scrollable"
+            app:tabGravity="center"
             android:layout_height="?attr/actionBarSize" />
         </android.support.design.widget.AppBarLayout>
-    <FrameLayout
-        android:id="@+id/activity_base_content"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+
     <android.support.v4.view.ViewPager
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -40,14 +39,20 @@
         android:background="#11151d"
         app:layout_behavior="@string/appbar_scrolling_view_behavior"
         android:layout_alignParentLeft="true"
-        android:layout_alignParentBottom="true"
-        android:layout_below="@+id/linear"
         android:fillViewport="false"/>
+    <com.google.android.gms.ads.AdView
+        android:layout_gravity="bottom"
+        android:padding="0dp"
+        android:id="@+id/adView"
+        android:layout_marginBottom="66dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:adSize="SMART_BANNER"
+        app:adUnitId="@string/banner_ad_unit_id" ></com.google.android.gms.ads.AdView>
     <RelativeLayout
         android:orientation="horizontal"
         android:layout_width="match_parent"
         android:padding="2dp"
-
         android:id="@+id/clickLayout"
         android:layout_gravity="bottom"
         android:background="@android:color/white"
@@ -97,11 +102,7 @@
                     android:id="@+id/textView5"
                     android:layout_gravity="center_horizontal" />
             </LinearLayout>
-
         </LinearLayout>
-
-
-
         <mp.ajapps.musicplayerfree.Widgets.SquareImageView
             android:id="@+id/image1"
             android:src="@drawable/ic_red_play"
@@ -112,8 +113,5 @@
             android:layout_alignParentTop="true"
             android:layout_alignParentRight="true"
             android:layout_alignParentEnd="true" />
-
-
     </RelativeLayout>
-
 </android.support.design.widget.CoordinatorLayout>

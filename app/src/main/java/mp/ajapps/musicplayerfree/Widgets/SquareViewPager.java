@@ -27,7 +27,7 @@ public class SquareViewPager extends ViewPager {
 
     /**
      * @param context The {@link Context} to use
-     * @param attrs The attributes of the XML tag that is inflating the view.
+     * @param attrs   The attributes of the XML tag that is inflating the view.
      */
     public SquareViewPager(Context context, AttributeSet attrs) {
         super(context, attrs);

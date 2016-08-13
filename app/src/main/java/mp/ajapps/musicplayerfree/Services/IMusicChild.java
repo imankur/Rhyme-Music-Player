@@ -12,18 +12,15 @@ import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
-import android.media.session.MediaSession;
 import android.net.Uri;
 import android.os.Build;
 import android.os.IBinder;
 import android.os.PowerManager;
 import android.os.RemoteException;
-import android.provider.BaseColumns;
 import android.provider.MediaStore;
 import android.support.v7.app.NotificationCompat;
 import android.util.Log;
 import android.view.View;
-import android.widget.ImageView;
 import android.widget.RemoteViews;
 
 import com.nostra13.universalimageloader.core.ImageLoader;
@@ -38,47 +35,44 @@ import mp.ajapps.musicplayerfree.Activity.MainActivity;
 import mp.ajapps.musicplayerfree.Helpers.MusicPlaybackState;
 import mp.ajapps.musicplayerfree.Helpers.RecentStore;
 import mp.ajapps.musicplayerfree.IMusicParent;
-import mp.ajapps.musicplayerfree.Models.AlbumArtistDetails;
 import mp.ajapps.musicplayerfree.R;
 
 public class IMusicChild extends Service implements MediaPlayer.OnPreparedListener, MediaPlayer.OnCompletionListener {
 
     public static final String META_CHANGED = "mp.ajapps.musicplayerfree.metachanged";
     public static final String NEXT_ACTION = "mp.ajapps.musicplayerfree.next";
+    public static final String Queue_Changed = "mp.ajapps.musicplayerfree.Queue";
+    public static final int SHUFFLE_AUTO = 2;
     private static final int SHUFFLE_NONE = 0;
     private static final int SHUFFLE_NORMAL = 1;
-    public static final int SHUFFLE_AUTO = 2;
     private static final int REPEAT_NONE = 0;
     private static final int REPEAT_CURRENT = 1;
+    private static final String TAG = "IMusicChildService";
+    private static final String[] PROJECTION = new String[]{
+            "audio._id AS _id", MediaStore.Audio.Media.ARTIST, MediaStore.Audio.Media.ALBUM,
+            MediaStore.Audio.Media.TITLE, MediaStore.Audio.Media.ALBUM_ID
+    };
+    private static final String[] ALBUM_PROJECTION = new String[]{
+            MediaStore.Audio.Albums.ALBUM, MediaStore.Audio.Albums.ARTIST,
+            MediaStore.Audio.Albums.LAST_YEAR, MediaStore.Audio.Albums.ALBUM_ART
+    };
+    private final IBinder iBinder = new ServiceStub(this);
+    private final Random mRandom = new Random();
     private int mRepeatMode = REPEAT_NONE;
     private int mShuffleMode = SHUFFLE_NONE;
-
     private SharedPreferences mPreferences;
-    private static final String TAG = "IMusicChildService";
-    private final IBinder iBinder = new ServiceStub(this);
     private int mPlayListLen = 0;
     private Cursor mCursor, mAlbumCursor;
     private boolean mIsPlaying = false;
     private NotificationManager mNotificationManager;
     private int mPlayPos = 0;
-    private MediaPlayer mMediaPlayer,mNextMediaPlayer;
+    private MediaPlayer mMediaPlayer, mNextMediaPlayer;
     private long[] mPlayList = null;
     private MusicPlaybackState mPlaybackState;
     private RecentStore mRecentStore;
     private int mNextPlayPos = -1;
     private int mOpenFailedCounter = 0;
     private ArrayList<String> mCurrentInfoList;
-    private final Random mRandom = new Random();
-
-    private static final String[] PROJECTION = new String[] {
-            "audio._id AS _id", MediaStore.Audio.Media.ARTIST, MediaStore.Audio.Media.ALBUM,
-            MediaStore.Audio.Media.TITLE, MediaStore.Audio.Media.ALBUM_ID
-    };
-
-    private static final String[] ALBUM_PROJECTION = new String[] {
-            MediaStore.Audio.Albums.ALBUM, MediaStore.Audio.Albums.ARTIST,
-            MediaStore.Audio.Albums.LAST_YEAR, MediaStore.Audio.Albums.ALBUM_ART
-    };
 
     public IMusicChild() {
     }
@@ -115,14 +109,13 @@ public class IMusicChild extends Service implements MediaPlayer.OnPreparedListen
     @Override
     public void onCreate() {
         super.onCreate();
-
         mPlaybackState = new MusicPlaybackState(this);
         mRecentStore = RecentStore.getInstance(this);
-        mPreferences = getSharedPreferences("service",0);
+        mPreferences = getSharedPreferences("service", 0);
         if (mMediaPlayer == null) {
             mMediaPlayer = new MediaPlayer();
             mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-    }
+        }
         mCurrentInfoList = new ArrayList<String>();
         reloadQueue();
         mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
@@ -146,6 +139,7 @@ public class IMusicChild extends Service implements MediaPlayer.OnPreparedListen
         }
         return mRepeatMode;
     }
+
     private void buildNotification() {
         String strtitle = "titlll";
         Intent intent = new Intent(this, MainActivity.class);
@@ -171,15 +165,14 @@ public class IMusicChild extends Service implements MediaPlayer.OnPreparedListen
     }
 
 
-
-    private void showNotification( boolean isPlaying ) {
-        final Notification notification = new NotificationCompat.Builder( getApplicationContext() )
-                .setAutoCancel( true )
-                .setSmallIcon( R.drawable.ic_play )
-                .setContentTitle( getString( R.string.app_name ) )
+    private void showNotification(boolean isPlaying) {
+        final Notification notification = new NotificationCompat.Builder(getApplicationContext())
+                .setAutoCancel(true)
+                .setSmallIcon(R.drawable.ic_play)
+                .setContentTitle(getString(R.string.app_name))
                 .build();
 
-        if( Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN )
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
             notification.bigContentView = getExpandedView(isPlaying());
         mNotificationManager.cancel(1);
         ImageLoader.getInstance().loadImage("file:///" + getAlbumArt(), new SimpleImageLoadingListener() {
@@ -191,19 +184,24 @@ public class IMusicChild extends Service implements MediaPlayer.OnPreparedListen
         });
     }
 
+    public long[] getQueue() {
+        synchronized (this) {
+            return mPlayList;
+        }
+    }
 
     private RemoteViews getExpandedView(boolean isPlaying) {
-        RemoteViews customView = new RemoteViews( getPackageName(), R.layout.custom_noti);
-        customView.setImageViewResource( R.id.large_icon, R.drawable.default_artwork);
-        if(isPlaying)
-            customView.setImageViewResource( R.id.ib_play_pause, R.drawable.ic_pause);
+        RemoteViews customView = new RemoteViews(getPackageName(), R.layout.custom_noti);
+        customView.setImageViewResource(R.id.large_icon, R.drawable.default_artwork);
+        if (isPlaying)
+            customView.setImageViewResource(R.id.ib_play_pause, R.drawable.ic_pause);
         else
-            customView.setImageViewResource( R.id.ib_play_pause, R.drawable.ic_play);
+            customView.setImageViewResource(R.id.ib_play_pause, R.drawable.ic_play);
         customView.setTextViewText(R.id.track, getTrackName());
-        customView.setTextViewText(R.id.artist,getArtistName());
+        customView.setTextViewText(R.id.artist, getArtistName());
         //customView.setImageViewResource( R.id.ib_fast_forward, R.drawable.ic_fast_forward );
 
-        Intent intent = new Intent( getApplicationContext(), MainActivity.class );
+        Intent intent = new Intent(getApplicationContext(), MainActivity.class);
 
       /*  intent.setAction( ACTION_NOTIFICATION_PLAY_PAUSE );
         PendingIntent pendingIntent = PendingIntent.getService( getApplicationContext(), 1, intent, 0 );
@@ -286,6 +284,19 @@ public class IMusicChild extends Service implements MediaPlayer.OnPreparedListen
         setNextDataSource();
     }
 
+    void setAndPlayQueue(int pos) {
+        updateCursor(mPlayList[pos]);
+        if (pos >= 0) {
+            mPlayPos = pos;
+        } else {
+            mPlayPos = 0;
+        }
+
+        setDataSourceInMp(mMediaPlayer, mPlayPos);
+        playPlayer(mMediaPlayer, mPlayPos);
+        setNextDataSource();
+    }
+
     private void pagerNextPlay(int position) {
         mPlayPos = position;
         updateCursor(mPlayList[position]);
@@ -317,7 +328,6 @@ public class IMusicChild extends Service implements MediaPlayer.OnPreparedListen
     }
 
 
-
     private void saveQueue() {
         final SharedPreferences.Editor editor = mPreferences.edit();
         editor.putInt("curpos", mPlayPos);
@@ -325,16 +335,13 @@ public class IMusicChild extends Service implements MediaPlayer.OnPreparedListen
         editor.putInt("shufflemode", mShuffleMode);
         editor.apply();
         mPlaybackState.saveState(mPlayList);
-        Log.i("bugss", "SaveQueue: -" + "-"+ mMediaPlayer.getCurrentPosition() +"--" + mPlayList.length + "-- " + mPlayList[mPlayPos]);
     }
 
     private void reloadQueue() {
         mPlayList = mPlaybackState.getState();
         long seek = mPreferences.getLong("seekpos", 1);
-
         mPlayPos = mPreferences.getInt("curpos", 0);
         mShuffleMode = mPreferences.getInt("shufflemode", 0);
-
         if (mPlayList.length > 0) {
             updateCursor(mPlayList[mPlayPos]);
             try {
@@ -348,22 +355,19 @@ public class IMusicChild extends Service implements MediaPlayer.OnPreparedListen
         } else {
 
         }
-
     }
 
     @Override
     public boolean onUnbind(Intent intent) {
-        saveQueue();
+        if (mPlayList.length > 0) {
+            saveQueue();
+        }
         return true;
     }
 
     private boolean setDataSourceInMp(MediaPlayer player, int pos) {
         try {
-            if (player != null) {
-               // player = mMediaPlayer;
-            }
             setupPlayer(player, pos);
-
         } catch (IOException ex) {
             return false;
         } catch (IllegalArgumentException ex) {
@@ -377,9 +381,9 @@ public class IMusicChild extends Service implements MediaPlayer.OnPreparedListen
         mRecentStore.saveSongId(mPlayList[pos]);
         sendBroadcast(new Intent().setAction(IMusicChild.META_CHANGED).putExtra("albumArt", this.getAlbumArt()));
     }
+
     private void setupPlayer(MediaPlayer player, int pos) throws IOException {
         player.reset();
-        player.setOnPreparedListener(this);
         player.setAudioStreamType(AudioManager.STREAM_MUSIC);
         Uri contentUri = ContentUris.withAppendedId(
                 android.provider.MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, mPlayList[pos]);
@@ -388,9 +392,8 @@ public class IMusicChild extends Service implements MediaPlayer.OnPreparedListen
         player.setOnCompletionListener(this);
     }
 
-    private void seekSong(final long whereto){
-        //Log.i("seeku -",""+ (int)whereto);
-        mMediaPlayer.seekTo((int)whereto);
+    private void seekSong(final long whereto) {
+        mMediaPlayer.seekTo((int) whereto);
     }
 
     private int getNextPlayInt() {
@@ -398,9 +401,10 @@ public class IMusicChild extends Service implements MediaPlayer.OnPreparedListen
             return mRandom.nextInt(mPlayList.length);
         } else if (mShuffleMode == SHUFFLE_NONE) {
             int temp = mPlayPos + 1;
-            if (temp >= mPlayListLen) {
+            if (temp >= mPlayList.length) {
                 return 0;
             } else {
+                Log.i("abcde", "getNextPlayInt: " + temp + "==" + mPlayList.length);
                 return temp;
             }
         }
@@ -478,6 +482,7 @@ public class IMusicChild extends Service implements MediaPlayer.OnPreparedListen
 
     private void setNextDataSource() {
         mNextPlayPos = getNextPlayInt();
+        Log.i("abcde", "setNextDataSource: " + mNextPlayPos);
         mMediaPlayer.setNextMediaPlayer(null);
         if (mNextMediaPlayer != null) {
             mNextMediaPlayer.release();
@@ -488,7 +493,7 @@ public class IMusicChild extends Service implements MediaPlayer.OnPreparedListen
         }
         mNextMediaPlayer = new MediaPlayer();
         mNextMediaPlayer.setWakeMode(IMusicChild.this, PowerManager.PARTIAL_WAKE_LOCK);
-       // mNextMediaPlayer.setAudioSessionId(getAudioSessionId());
+        // mNextMediaPlayer.setAudioSessionId(getAudioSessionId());
         if (setDataSourceInMp(mNextMediaPlayer, mNextPlayPos)) {
             mMediaPlayer.setNextMediaPlayer(mNextMediaPlayer);
         } else {
@@ -542,7 +547,7 @@ public class IMusicChild extends Service implements MediaPlayer.OnPreparedListen
         }
     }
 
-    private int getPosition(){
+    private int getPosition() {
         return mMediaPlayer.getCurrentPosition();
     }
 
@@ -590,6 +595,43 @@ public class IMusicChild extends Service implements MediaPlayer.OnPreparedListen
         }
     }
 
+    private void moveQueueItem(int index1, int index2) {
+        synchronized (this) {
+            mPlayListLen = mPlayList.length;
+
+            if (index1 >= mPlayListLen) {
+                index1 = mPlayListLen - 1;
+            }
+            if (index2 >= mPlayListLen) {
+                index2 = mPlayListLen - 1;
+            }
+            if (index1 < index2) {
+                final long tmp = mPlayList[index1];
+                for (int i = index1; i < index2; i++) {
+                    mPlayList[i] = mPlayList[i + 1];
+                }
+                mPlayList[index2] = tmp;
+                if (mPlayPos == index1) {
+                    mPlayPos = index2;
+                } else if (mPlayPos >= index1 && mPlayPos <= index2) {
+                    mPlayPos--;
+                }
+            } else if (index2 < index1) {
+                final long tmp = mPlayList[index1];
+                for (int i = index1; i > index2; i--) {
+                    mPlayList[i] = mPlayList[i - 1];
+                }
+                mPlayList[index2] = tmp;
+                if (mPlayPos == index1) {
+                    mPlayPos = index2;
+                } else if (mPlayPos >= index2 && mPlayPos <= index1) {
+                    mPlayPos++;
+                }
+            }
+            sendBroadcast(new Intent().setAction(Queue_Changed));
+        }
+    }
+
     private long duration() {
         return mMediaPlayer.getDuration();
     }
@@ -597,11 +639,11 @@ public class IMusicChild extends Service implements MediaPlayer.OnPreparedListen
     @Override
     public void onPrepared(MediaPlayer mp) {
         //buildNotification();
-      //  showNotification(false);
-       // mp.start();
+        //  showNotification(false);
+        // mp.start();
         //mp.start();
         //mRecentStore.saveSongId(mPlayList[mPlayPos]);
-       // sendBroadcast(new Intent().setAction(IMusicChild.META_CHANGED).putExtra("albumArt", this.getAlbumArt()));
+        // sendBroadcast(new Intent().setAction(IMusicChild.META_CHANGED).putExtra("albumArt", this.getAlbumArt()));
     }
 
     @Override
@@ -619,6 +661,7 @@ public class IMusicChild extends Service implements MediaPlayer.OnPreparedListen
 
     static class ServiceStub extends IMusicParent.Stub {
         final WeakReference<IMusicChild> mService;
+
         ServiceStub(IMusicChild service) {
             mService = new WeakReference<IMusicChild>(service);
         }
@@ -663,7 +706,7 @@ public class IMusicChild extends Service implements MediaPlayer.OnPreparedListen
 
         @Override
         public long getAlbumId() throws RemoteException {
-            return  mService.get().getAlbumId();
+            return mService.get().getAlbumId();
         }
 
         @Override
@@ -728,12 +771,27 @@ public class IMusicChild extends Service implements MediaPlayer.OnPreparedListen
 
         @Override
         public int toggleShuffle() throws RemoteException {
-           return mService.get().toggleShuffle();
+            return mService.get().toggleShuffle();
         }
 
         @Override
         public int toggleRepeat() throws RemoteException {
             return this.mService.get().toggleRepeat();
+        }
+
+        @Override
+        public long[] getQueue() throws RemoteException {
+            return this.mService.get().getQueue();
+        }
+
+        @Override
+        public void moveQueueItem(int index1, int index2) throws RemoteException {
+            mService.get().moveQueueItem(index1, index2);
+        }
+
+        @Override
+        public void setAndPlayQueue(int pos) throws RemoteException {
+            mService.get().setAndPlayQueue(pos);
         }
     }
 }
