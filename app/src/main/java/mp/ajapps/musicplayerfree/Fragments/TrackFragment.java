@@ -42,11 +42,13 @@ public class TrackFragment extends Fragment implements LoaderManager.LoaderCallb
     private boolean isMultiSelectMode = false;
     String TAG = "cooool";
     String[] mProjection;
+    long[] mTrackIds;
     ActionMode mActionMode;
     Toolbar mToolbar;
     StringBuilder where;
     FastScroller fastScroller;
     Cursor mCursor;
+    private boolean mFirst = true;
     String mWhere;
     AppCompatActivity act;
     String mSortOrder = MediaStore.Audio.Media.DEFAULT_SORT_ORDER;
@@ -91,9 +93,8 @@ public class TrackFragment extends Fragment implements LoaderManager.LoaderCallb
         mRecycleView.setLayoutManager(mLayoutManager);
         mAdpt = new TrackAdapter(getActivity(), R.layout.track_row, this, getFragmentManager());
         mRecycleView.setAdapter(mAdpt);
-        mRecycleView.setItemViewCacheSize(40);
 
-        mRecycleView.addOnScrollListener(new RecyclerPauseOnScrollListener(ImageLoader.getInstance(), true, false));
+      //  mRecycleView.addOnScrollListener(new RecyclerPauseOnScrollListener(ImageLoader.getInstance(), true, false));
         fastScroller = (FastScroller) v.findViewById(R.id.fastscroll);
         fastScroller.setScrollBarSize(20);
 
@@ -133,6 +134,7 @@ public class TrackFragment extends Fragment implements LoaderManager.LoaderCallb
         mAdpt.changeCursor(data);
         mAdpt.notifyDataSetChanged();
         mCursor = data;
+        this.mTrackIds = MusicUtils.getSongListForCursor(data);
     }
 
     @Override
@@ -150,9 +152,24 @@ public class TrackFragment extends Fragment implements LoaderManager.LoaderCallb
     }
 
     @Override
+    public void onDestroy() {
+        super.onDestroy();
+        if (mCursor != null) mCursor.close();
+    }
+
+    @Override
     public void myOnClick(int pos, View v) {
         if (mActionMode == null) {
-            MusicUtils.setAndPlay(mCursor, pos);
+          /*  if (!mFirst) {
+                try {
+                    MusicUtils.mService.setAndPlayQueue(pos);
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+            } else {*/
+                MusicUtils.setAndPlay(mCursor, pos);
+                mFirst = false;
+            //7}
         } else {
             this.doToggle(pos);
         }

@@ -1,14 +1,18 @@
 package mp.ajapps.musicplayerfree.Activity;
 
+import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.RemoteException;
+import android.preference.PreferenceManager;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
 import android.support.v4.view.ViewPager;
@@ -40,6 +44,7 @@ import mp.ajapps.musicplayerfree.Fragments.ArtistFragment;
 import mp.ajapps.musicplayerfree.Fragments.PlaylistFragment;
 import mp.ajapps.musicplayerfree.Fragments.SuggestionFragment;
 import mp.ajapps.musicplayerfree.Fragments.TrackFragment;
+import mp.ajapps.musicplayerfree.Helpers.BugManager;
 import mp.ajapps.musicplayerfree.Helpers.MusicUtils;
 import mp.ajapps.musicplayerfree.IMusicParent;
 import mp.ajapps.musicplayerfree.Play.Play_Activity;
@@ -54,12 +59,11 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
     MyReceiver myf = null;
     TextView mTrack, mArtist;
     ImageView im, mPlayim;
-    Menu mMenu;
-    String TAG = "debuggggg----";
-    private GestureDetector gestureDetector;
+    Boolean mStayOn, mTheme = false;
+
     @Override
     protected void onStart() {
-        Log.i(TAG, "onStart: ");
+        Toast.makeText(MainActivity.this, "starty", Toast.LENGTH_SHORT).show();
         startService(new Intent(this, IMusicChild.class));
         Boolean b = bindService(new Intent(this, IMusicChild.class), this, 0);
         super.onStart();
@@ -67,18 +71,13 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
 
     @Override
     public void onBackPressed() {
-        //super.onBackPressed();
-        Log.i(TAG, "onBackPressed: ");
         moveTaskToBack(true);
     }
 
     @Override
     protected void onStop() {
-        Log.i(TAG, "onStop: ");
         ImageLoader.getInstance().clearMemoryCache();
         unbindService(this);
-       // stopService(new Intent(this, IMusicChild.class));
-
         super.onStop();
     }
 
@@ -104,22 +103,22 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        Log.i(TAG, "onCreate: ");
+        //ChangeLinear();
+        SharedPreferences settings = getSharedPreferences("settings", 0);
+        mTheme = settings.getBoolean("theme", false);
+        if (mTheme) {
+            themeDark();
+        }
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_main);
         mPager = (ViewPager) findViewById(R.id.vpView);
         MusicUtils.initImageCacher(this);
-        AdView mAdView = (AdView) findViewById(R.id.adView);
-        AdRequest adRequest = new AdRequest.Builder().addTestDevice("7971949E9B14F3AB74918D51DB72B497").build();
-        //mAdView.loadAd(adRequest);
-       // Toast.makeText(this, "Screen density is : " + getDensityName(this) +"--"+ getResources().getDimension(R.dimen.up_dimen) , Toast.LENGTH_LONG).show();
         DisplayMetrics metrics = getResources().getDisplayMetrics();
-        //  Log.i("dentis", "onCreate:  cff555fff " + metrics.heightPixels/metrics.density +"  "+ metrics.widthPixels/metrics.density +" " + metrics.densityDpi)  ;
-
         final Toolbar toolbar = (Toolbar) findViewById(R.id.my_toolbar_main);
         setSupportActionBar(toolbar);
+        toolbar.setTitle("My Library");
         final TabLayout tabLayout = (TabLayout) findViewById(R.id.tabs_view);
-//BugManager.getInstance(this,"");
         ll = (RelativeLayout) findViewById(R.id.clickLayout);
         ll.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -131,38 +130,17 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
         mArtist = (TextView) findViewById(R.id.textView5);
         im = (ImageView) findViewById(R.id.image);
         mPlayim = (ImageView) findViewById(R.id.image1);
-        ArrayList<Fragment> fragments = new ArrayList<Fragment>();
-        //  fragments.add(SuggestFragment.newInstance());
+        ArrayList<Fragment> fragments = new ArrayList<>();
         fragments.add(new SuggestionFragment());
-        //fragments.add(RecentFragment.newInstance());
         fragments.add(TrackFragment.newInstance());
         fragments.add(AlbumFragment.newInstance());
         fragments.add(new ArtistFragment());
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-       // fragments.add(new PlaylistFragment());
+
         mPagerAdap = new TrackPagerAdap(getSupportFragmentManager(), fragments);
         mPager.setAdapter(mPagerAdap);
-        mPager.setCurrentItem(0);
+        mPager.setCurrentItem(1);
         mPager.setOffscreenPageLimit(3);
-
         tabLayout.setupWithViewPager(mPager);
-        mPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
-            @Override
-            public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
-             //   invalidateOptionsMenu();
-            }
-
-            @Override
-            public void onPageSelected(int position) {
-
-            }
-
-            @Override
-            public void onPageScrollStateChanged(int state) {
-
-            }
-        });
-
         mPlayim.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -182,7 +160,6 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
         ll.setOnTouchListener(new OnSwipeTouchListener(this, metrics.density){
             @Override
             public void onSwipeLeft() {
-                Toast.makeText(MainActivity.this, "top", Toast.LENGTH_SHORT).show();
                 try {
                     MusicUtils.mService.goToPrev();
                 } catch (RemoteException e) {
@@ -192,7 +169,6 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
 
             @Override
             public void onSwipeRight() {
-                Toast.makeText(MainActivity.this, "Next", Toast.LENGTH_SHORT).show();
                 try {
                     MusicUtils.mService.goToNext();
                 } catch (RemoteException e) {
@@ -202,18 +178,29 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
 
             @Override
             public void onSingle() {
-                Toast.makeText(MainActivity.this, "single", Toast.LENGTH_SHORT).show();
                 startActivity(new Intent(getApplicationContext(), Play_Activity.class));
             }
         });
 
+        mStayOn = settings.getBoolean("checkbox", false);
+        toggleStayOn();
+    }
 
+    private void toggleStayOn() {
+        if (mStayOn) {
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        } else {
+            getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        }
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-    mMenu = menu;
         getMenuInflater().inflate(R.menu.menu_main, menu);
+        MenuItem item = menu.findItem(R.id.action_set_stayOn);
+        item.setChecked(mStayOn);
+        item = menu.findItem(R.id.action_toggletheme);
+        item.setChecked(mTheme);
         return true;
     }
 
@@ -227,17 +214,52 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
             startActivity(new Intent(this, SearchActivity.class));
             return true;
         } else if (id == R.id.action_shuffle) {
-            //new ListPlaylistDailog().show(getFragmentManager(),"5");
+            return true;
         } else if (id == R.id.action_playlist) {
-            new NewPlaylistDialog().show( getSupportFragmentManager(), "yo");
+            new NewPlaylistDialog().show(getSupportFragmentManager(), "yo");
+            return true;
+        } else if (id == R.id.action_set_stayOn) {
+            boolean status = !item.isChecked();
+            item.setChecked(status);
+            mStayOn = status;
+            SharedPreferences settings = getSharedPreferences("settings", 0);
+            SharedPreferences.Editor editor = settings.edit();
+            editor.putBoolean("checkbox", status);
+            editor.apply();
+            toggleStayOn();
+            return true;
+        } else if (id == R.id.action_toggletheme) {
+            boolean status = !item.isChecked();
+            item.setChecked(status);
+            mStayOn = status;
+            SharedPreferences settings = getSharedPreferences("settings", 0);
+            SharedPreferences.Editor editor = settings.edit();
+            editor.putBoolean("theme", status);
+            editor.apply();
+            changeToTheme();
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    private void themeDark() {
+        setTheme(R.style.AppTheme_Dark);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+            getWindow().setStatusBarColor(getResources().getColor(R.color.dark_primary_dark));
+        }
+    }
+
+    public void changeToTheme() {
+        finish();
+        startActivity(new Intent(this, this.getClass()));
+        overridePendingTransition(android.R.anim.fade_in,
+                android.R.anim.fade_out);
     }
 
     @Override
     public void onServiceConnected(ComponentName name, IBinder service) {
         MusicUtils.mService = IMusicParent.Stub.asInterface(service);
-        Log.i(TAG, "onServiceConnected: ");
+        ChangeLinear();
     }
 
     @Override
@@ -248,7 +270,6 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
     @Override
     protected void onResume() {
         super.onResume();
-        Log.i(TAG, "onResume: ");
         if (myf == null) {
             myf = new MyReceiver();
             IntentFilter intentFilter = new IntentFilter();
@@ -260,13 +281,11 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-       // gestureDetector.onTouchEvent(event);
         return super.onTouchEvent(event);
     }
 
     @Override
     public void onPause() {
-        Log.i(TAG, "onPause: ");
         super.onPause();
         if (myf != null) {
             unregisterReceiver(myf);
@@ -277,8 +296,8 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
 
     @Override
     protected void onDestroy() {
+        Toast.makeText(MainActivity.this, "destroy", Toast.LENGTH_SHORT).show();
         super.onDestroy();
-        Log.i(TAG, "onDestroy: ");
         stopService(new Intent(this, IMusicChild.class));
     }
 
@@ -289,7 +308,6 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
         @Override
         public void onReceive(final Context context, final Intent intent) {
             String action = intent.getAction();
-
             if (action.equals(IMusicChild.META_CHANGED)) {
                 Bundle data = intent.getExtras();
                     mTrack.setText(data.getString("tName"));
@@ -301,22 +319,30 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
         }
     }
 
+    private void ChangeLinear() {
+
+        try {
+            mArtist.setText(MusicUtils.mService.getArtistName());
+            mTrack.setText(MusicUtils.mService.getTrackName());
+            String path = MusicUtils.mService.getAlbumArt();
+            ImageLoader.getInstance().displayImage("file:///" + path, im);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+    }
+
 
     public class OnSwipeTouchListener implements View.OnTouchListener {
-
         private final GestureDetector gestureDetector;
         private int SWIPE_THRESHOLD = 100;
-
         public OnSwipeTouchListener (Context ctx, float pix){
             SWIPE_THRESHOLD = ((int) Math.round(pix * 25));
             gestureDetector = new GestureDetector(ctx, new GestureListener());
         }
-
         @Override
         public boolean onTouch(View v, MotionEvent event) {
             return gestureDetector.onTouchEvent(event);
         }
-
         private final class GestureListener extends GestureDetector.SimpleOnGestureListener {
             private static final int SWIPE_VELOCITY_THRESHOLD = 800;
 
@@ -334,11 +360,9 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
             @Override
             public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
                 boolean result = false;
-
                 try {
                     float diffY = e2.getY() - e1.getY();
                     float diffX = e2.getX() - e1.getX();
-                    Log.i("xxxxxxxxx", "onFling: " + velocityX +"  -  " +diffX + " - " + SWIPE_THRESHOLD);
                     if (Math.abs(diffX) > Math.abs(diffY)) {
                         if (Math.abs(diffX) > SWIPE_THRESHOLD && Math.abs(velocityX) > SWIPE_VELOCITY_THRESHOLD) {
                             if (diffX > 0) {
@@ -365,22 +389,11 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
             }
         }
 
-        public void onSwipeRight() {
-        }
-
-        public void onSwipeLeft() {
-        }
-
-        public void onSwipeTop() {
-        }
-
-        public void onSwipeBottom() {
-        }
-
-        public void onSingle() {
-
-        }
+        public void onSwipeRight() {}
+        public void onSwipeLeft() {}
+        public void onSwipeTop() {}
+        public void onSwipeBottom() {}
+        public void onSingle() {}
     }
-
 }
 

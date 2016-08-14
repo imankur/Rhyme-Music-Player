@@ -26,6 +26,7 @@ import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.View;
 import android.widget.RemoteViews;
+import android.widget.Toast;
 
 import com.nostra13.universalimageloader.core.ImageLoader;
 import com.nostra13.universalimageloader.core.listener.SimpleImageLoadingListener;
@@ -36,6 +37,7 @@ import java.util.ArrayList;
 import java.util.Random;
 
 import mp.ajapps.musicplayerfree.Activity.MainActivity;
+import mp.ajapps.musicplayerfree.Helpers.ExeTimeCalculator;
 import mp.ajapps.musicplayerfree.Helpers.MusicPlaybackState;
 import mp.ajapps.musicplayerfree.Helpers.RecentStore;
 import mp.ajapps.musicplayerfree.IMusicParent;
@@ -80,6 +82,7 @@ public class IMusicChild extends Service implements MediaPlayer.OnPreparedListen
     private int mNextPlayPos = -1;
     private int mOpenFailedCounter = 0;
     private ArrayList<String> mCurrentInfoList;
+    private boolean mTelePlaying = false;
     private ServiceReciver mReciver =null;
 private TelephonyManager tm;
     private TelePhonyDetector td;
@@ -92,9 +95,11 @@ private TelephonyManager tm;
 
             switch (state) {
                 case TelephonyManager.CALL_STATE_RINGING :
+                    mTelePlaying = isPlaying() ? true :  false;
                     mMediaPlayer.pause();
                     break;
                 case TelephonyManager.CALL_STATE_IDLE :
+                    if (mTelePlaying)
                     mMediaPlayer.start();
                     break;
                 case TelephonyManager.CALL_STATE_OFFHOOK :
@@ -152,6 +157,7 @@ private TelephonyManager tm;
     @Override
     public void onCreate() {
         super.onCreate();
+        Toast.makeText(this, "on create ", Toast.LENGTH_SHORT).show();
         mPlaybackState = new MusicPlaybackState(this);
         mRecentStore = RecentStore.getInstance(this);
         mPreferences = getSharedPreferences("service", 0);
@@ -167,7 +173,8 @@ private TelephonyManager tm;
         registerReceiver(mReciver, mFilter);
         if (mMediaPlayer == null) {
             mMediaPlayer = new MediaPlayer();
-            mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+            mNextMediaPlayer = new MediaPlayer();
+           // mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
         }
         tm = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
         td = new TelePhonyDetector();
@@ -229,6 +236,7 @@ private TelephonyManager tm;
         } else {
             mRepeatMode = REPEAT_NONE;
         }
+        setNextDataSource();
         return mRepeatMode;
     }
 
@@ -335,7 +343,8 @@ Intent intent2 = new Intent();
 
 
     private void setAndPlay(long[] list, int position) {
-
+        ExeTimeCalculator exeTimeCalculator = new ExeTimeCalculator();
+        exeTimeCalculator.addTimeFrame("x");
         int listlength = list.length;
         boolean newlist = true;
         if (mPlayListLen == listlength) {
@@ -351,13 +360,14 @@ Intent intent2 = new Intent();
             this.mPlayList = list;
             this.mPlayListLen = list.length;
         }
-        updateCursor(mPlayList[position]);
+        exeTimeCalculator.addTimeFrame("o");
+
         if (position >= 0) {
             mPlayPos = position;
         } else {
             mPlayPos = 0;
         }
-
+        updateCursor(mPlayList[position]);
         setDataSourceInMp(mMediaPlayer, mPlayPos);
         playPlayer(mMediaPlayer, mPlayPos);
         setNextDataSource();
@@ -387,6 +397,8 @@ Intent intent2 = new Intent();
     @Override
     public void onDestroy() {
         super.onDestroy();
+        Toast.makeText(this, "destroy " + mMediaPlayer.getCurrentPosition(), Toast.LENGTH_SHORT).show();
+
         mIsPlaying = false;
         mNotificationManager.cancel(4);
         if (mReciver != null) {
@@ -416,7 +428,9 @@ Intent intent2 = new Intent();
     private void saveQueue() {
         final SharedPreferences.Editor editor = mPreferences.edit();
         editor.putInt("curpos", mPlayPos);
-        editor.putLong("seekpos", mMediaPlayer.getCurrentPosition());
+        Log.i("rickey", "saveQueue: " + mPlayPos + "--" + mPlayList[mPlayPos]);
+        editor.putInt("seekpos", mMediaPlayer.getCurrentPosition());
+        Toast.makeText(this, "savve " + mMediaPlayer.getCurrentPosition(), Toast.LENGTH_SHORT).show();
         editor.putInt("shufflemode", mShuffleMode);
         editor.apply();
         mPlaybackState.saveState(mPlayList);
@@ -424,8 +438,10 @@ Intent intent2 = new Intent();
 
     private void reloadQueue() {
         mPlayList = mPlaybackState.getState();
-        long seek = mPreferences.getLong("seekpos", 1);
+        int seek = mPreferences.getInt("seekpos", 1000);
         mPlayPos = mPreferences.getInt("curpos", 0);
+        Toast.makeText(this, "reload " + seek, Toast.LENGTH_SHORT).show();
+        Log.i("rickey", "reloadQueue: " + seek);
         mShuffleMode = mPreferences.getInt("shufflemode", 0);
         if (mPlayList.length > 0) {
             updateCursor(mPlayList[mPlayPos]);
@@ -436,6 +452,7 @@ Intent intent2 = new Intent();
             }
             setNextDataSource();
             seekSong(seek);
+            mNextMediaPlayer.seekTo(seek);
         } else {
 
         }
@@ -565,18 +582,18 @@ Intent intent2 = new Intent();
     }
 
     private void setNextDataSource() {
-        mNextPlayPos = getNextPlayInt();
-        mMediaPlayer.setNextMediaPlayer(null);
-        if (mNextMediaPlayer != null) {
-            mNextMediaPlayer.release();
-            mNextMediaPlayer = null;
+        if (mRepeatMode == REPEAT_CURRENT) {
+            mNextPlayPos = mPlayPos;
+        } else {
+            mNextPlayPos = getNextPlayInt();
         }
+        mMediaPlayer.setNextMediaPlayer(null);
         if (mNextPlayPos < 0) {
             return;
         }
-        mNextMediaPlayer = new MediaPlayer();
-        mNextMediaPlayer.setWakeMode(IMusicChild.this, PowerManager.PARTIAL_WAKE_LOCK);
-        // mNextMediaPlayer.setAudioSessionId(getAudioSessionId());
+        if (mNextMediaPlayer == null) {
+            mNextMediaPlayer = new MediaPlayer();
+        }
         if (setDataSourceInMp(mNextMediaPlayer, mNextPlayPos)) {
             mMediaPlayer.setNextMediaPlayer(mNextMediaPlayer);
         } else {
@@ -601,6 +618,7 @@ Intent intent2 = new Intent();
     }
 
     private void updateCursor(final String selection) {
+        Log.i("rickey", "updateCursor: " );
         synchronized (this) {
             closeCursor();
             mCursor = openCursorAndGoToFirst(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
@@ -653,7 +671,6 @@ Intent intent2 = new Intent();
             if (mCursor == null) {
                 return " ";
             }
-            Log.i("debug-", "getTrackName: + mCursor.getColumnIndexOrThrow(MediaStore.Audio.AudioColumns.TITLE)");
             return mCursor.getString(mCursor.getColumnIndexOrThrow(MediaStore.Audio.AudioColumns.TITLE));
         }
     }

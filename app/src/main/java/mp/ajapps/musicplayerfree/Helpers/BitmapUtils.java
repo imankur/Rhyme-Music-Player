@@ -17,34 +17,20 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 
-/**
- * {@link Bitmap} specific helpers.
- *
- * @author Andrew Neal (andrewdneal@gmail.com)
- */
 public final class BitmapUtils {
 
     /* Initial blur radius. */
-    private static final int DEFAULT_BLUR_RADIUS = 5;
-public static ExeTimeCalculator etc = new ExeTimeCalculator();
-    /**
-     * This class is never instantiated
-     */
+    private static final int DEFAULT_BLUR_RADIUS = 8;
+    public static ExeTimeCalculator etc = new ExeTimeCalculator();
+
     private BitmapUtils() {
     }
 
-    /**
-     * Takes a bitmap and creates a new slightly blurry version of it.
-     *
-     * @param   {@link Bitmap} to blur.
-     * @return A blurred version of the given {@link Bitmap}.
-     */
     public static final Bitmap createBlurredBitmap(final Bitmap msentBitmap) {
-        etc.addTimeFrame("A");
         if (msentBitmap == null) {
             return null;
         }
-        Bitmap sentBitmap = resizeAndCropCenter(msentBitmap, 160);
+        Bitmap sentBitmap = resizeAndCropCenter(msentBitmap, 150);
         final Bitmap mBitmap = sentBitmap.copy(sentBitmap.getConfig(), true);
 
         final int w = mBitmap.getWidth();
@@ -223,8 +209,6 @@ public static ExeTimeCalculator etc = new ExeTimeCalculator();
         }
 
         mBitmap.setPixels(pix, 0, w, 0, 0, w, h);
-        etc.addTimeFrame("B");
-        etc.printDifference();
         return mBitmap;
     }
 

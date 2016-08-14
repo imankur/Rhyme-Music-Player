@@ -5,6 +5,7 @@ import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.os.AsyncTask;
 import android.os.RemoteException;
 import android.provider.BaseColumns;
 import android.provider.MediaStore;
@@ -32,20 +33,22 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.RejectedExecutionException;
 
+import mp.ajapps.musicplayerfree.Helpers.AsyncImageLoader;
+import mp.ajapps.musicplayerfree.Helpers.ExeTimeCalculator;
 import mp.ajapps.musicplayerfree.Helpers.MusicUtils;
+import mp.ajapps.musicplayerfree.POJOS.Song;
 import mp.ajapps.musicplayerfree.R;
 import mp.ajapps.musicplayerfree.Widgets.ListPlaylistDailog;
 
 public class TrackAdapter extends RecyclerView.Adapter<TrackAdapter.TrackHolder> {
-    Cursor dataCursor;
     int rowId;
     Context c;
     private myOnCLickInterface mMyOnClick;
     private SparseBooleanArray selectedItems;
     public FragmentManager mFm = null;
-    Typeface typeface;
-    int one, two, three;
+    private ArrayList<Song> mList = new ArrayList<>();
 
     public TrackAdapter(Context c, int id, myOnCLickInterface m, FragmentManager fm) {
         this.c = c;
@@ -53,7 +56,6 @@ public class TrackAdapter extends RecyclerView.Adapter<TrackAdapter.TrackHolder>
         this.mMyOnClick = m;
         selectedItems = new SparseBooleanArray();
         mFm = fm;
-        // typeface = Typeface.createFromAsset(c.getAssets(), "fonts/f1.ttf");
     }
 
     @Override
@@ -65,27 +67,36 @@ public class TrackAdapter extends RecyclerView.Adapter<TrackAdapter.TrackHolder>
 
     @Override
     public void onBindViewHolder(final TrackHolder holder, final int position) {
-        this.dataCursor.moveToPosition(position);
-        holder.mBack.setVisibility(selectedItems.get(position) ? View.VISIBLE: View.INVISIBLE);
-        holder.mTrackName.setText(this.dataCursor.getString(one));
-        holder.mTrackDetail.setText(this.dataCursor.getString(two));
-        String sID = MusicUtils.getAlbumArt(c, this.dataCursor.getLong(three));
         holder.mImg.setImageResource(R.drawable.default_artwork);
-        String v = "file:///" + sID;
-        ImageLoader.getInstance().displayImage(v, holder.mImg, new DisplayImageOptions.Builder().displayer(new RoundedBitmapDisplayer((int)c.getResources().getDimension(R.dimen.rounded))).build());
+        final int pos = position;
+        final Song m = mList.get(position);
+        holder.mBack.setVisibility(selectedItems.get(position) ? View.VISIBLE: View.INVISIBLE);
+        holder.mTrackName.setText(m.mSongName);
+        holder.mTrackDetail.setText(m.mAlbumName);
+        if (m.mArt == null) {
+            holder.mImg.setTag(Integer.valueOf(position));
+            try {
+                AsyncImageLoader asyncImageLoader = new AsyncImageLoader(m.getmAlbumId, holder.mImg, c, m, position);
+                asyncImageLoader.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, null);
+            } catch (RejectedExecutionException e) {
+                // Executor has exhausted queue space
+            }
+        } else if (m.mArt != "empty") {
+            ImageLoader.getInstance().displayImage(m.mArt, holder.mImg);
+        }
+
         holder.mView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (null != mMyOnClick) {
-                    Log.i("maula", "onClick: -------");
-                    mMyOnClick.myOnClick(position, holder.mView);
+                    mMyOnClick.myOnClick(pos, holder.mView);
                 }
             }
         });
         holder.mView.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
-                mMyOnClick.myOnLongClick(position, holder.mView);
+                mMyOnClick.myOnLongClick(pos, holder.mView);
                 return true;
             }
         });
@@ -127,35 +138,26 @@ public class TrackAdapter extends RecyclerView.Adapter<TrackAdapter.TrackHolder>
 
     @Override
     public int getItemCount() {
-        return (dataCursor == null) ? 0 : dataCursor.getCount();
+        return (mList == null) ? 0 : mList.size();
     }
 
     public void changeCursor(Cursor cursor) {
-        Cursor old = swapCursor(cursor);
-        if (old != null) {
-            old.close();
-        }
-    }
-    private void setIndex () {
-        one = this.dataCursor.getColumnIndexOrThrow(MediaStore.MediaColumns.TITLE);
-        two = this.dataCursor.getColumnIndexOrThrow(MediaStore.Audio.AudioColumns.ARTIST);
-        three = this.dataCursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ID);
-    }
-    public Cursor swapCursor(Cursor cursor) {
-        if (dataCursor == cursor) {
-            return null;
-        }
-        Cursor oldCursor = dataCursor;
-        this.dataCursor = cursor;
-        setIndex();
         if (cursor != null) {
-            this.notifyDataSetChanged();
+            int colidx = cursor.getColumnIndexOrThrow(BaseColumns._ID);
+            int one = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.TITLE);
+            int two = cursor.getColumnIndexOrThrow(MediaStore.Audio.AudioColumns.ARTIST);
+            int three = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ID);
+            while (cursor.moveToNext()) {
+                final Song m = new Song(cursor.getLong(colidx), cursor.getString(one), cursor.getString(two), cursor.getLong(three));
+                mList.add(m);
+            }
         }
-        return oldCursor;
+            this.notifyDataSetChanged();
+
     }
 
     public interface myOnCLickInterface {
-        public void myOnClick(int pos, View v);
+        void myOnClick(int pos, View v);
         public void myOnLongClick(int pos, View v);
     }
 
@@ -206,12 +208,9 @@ public class TrackAdapter extends RecyclerView.Adapter<TrackAdapter.TrackHolder>
     }
 
     public long[] getSelectedItems() {
-        int colidx = -1;
-        colidx = dataCursor.getColumnIndexOrThrow(BaseColumns._ID);
         long[] items = new long[selectedItems.size()];
         for (int i = 0; i < selectedItems.size(); i++) {
-            dataCursor.moveToPosition(selectedItems.keyAt(i));
-            items[i] = dataCursor.getLong(colidx);
+            items[i] = mList.get(selectedItems.keyAt(i)).mSongId;
         }
         return items;
     }

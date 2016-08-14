@@ -5,28 +5,27 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.RemoteException;
 import android.support.v4.app.Fragment;
-import android.support.v4.view.ViewPager;
+import android.util.DisplayMetrics;
+import android.util.Log;
+import android.view.GestureDetector;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdView;
 import com.nostra13.universalimageloader.core.ImageLoader;
-import com.nostra13.universalimageloader.core.assist.FailReason;
-import com.nostra13.universalimageloader.core.listener.ImageLoadingListener;
 
-import mp.ajapps.musicplayerfree.Adapters.AlbumArt_Pager_Adapter;
-import mp.ajapps.musicplayerfree.Helpers.BitmapUtils;
 import mp.ajapps.musicplayerfree.Helpers.ExeTimeCalculator;
 import mp.ajapps.musicplayerfree.Helpers.MusicUtils;
 import mp.ajapps.musicplayerfree.R;
@@ -37,13 +36,11 @@ public class PlayFragment extends Fragment {
 
     private static final String TAG = PlayFragment.class.getSimpleName();
     private final Handler mHandler = new Handler();
-    private AlbumArt_Pager_Adapter mALbumArtAdapter;
-    private ViewPager mViewPager;
     private long mDuration;
     private ImageView mPlayPause;
     private ImageView mNext;
     private ImageView mPrev;
-    private ImageView mShuffle;
+    private ImageView mShuffle, mViewPagerImage;
     private ImageView mRepeat;
     private Context mContext;
     private TextView tvTitle;
@@ -106,7 +103,6 @@ public class PlayFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        onServiceConnected();
         updateNowPlayingInfo();
         if (myf == null) {
             myf = new MyReceiver();
@@ -130,20 +126,14 @@ public class PlayFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View v = inflater.inflate(R.layout.fragment_play, container, false);
-        mViewPager = (ViewPager) v.findViewById(R.id.view2);
-        mALbumArtAdapter = new AlbumArt_Pager_Adapter(getFragmentManager(), getActivity());
-        mViewPager.setAdapter(mALbumArtAdapter);
-        mViewPager.setCurrentItem(MusicUtils.getQueuePosition());
+        mContext.startService(new Intent(mContext, IMusicChild.class));
+        mViewPagerImage = (ImageView) v.findViewById(R.id.view2);
         tvArtist = (TextView) v.findViewById(R.id.textViewArtist);
         tvTitle = (TextView) v.findViewById(R.id.textViewTitle);
-        int den = getResources().getDisplayMetrics().densityDpi;
         tvCurrentTime = (TextView) v.findViewById(R.id.textView6);
         tvFullTime = (TextView) v.findViewById(R.id.textView7);
-         AdView mAdView = (AdView) v.findViewById(R.id.adView);
-       //  AdRequest adRequest = new AdRequest.Builder().addTestDevice("7971949E9B14F3AB74918D51DB72B497").build();
-      //   mAdView.loadAd(adRequest);
-        exm.addTimeFrame("1");
-        mContext.startService(new Intent(mContext, IMusicChild.class));
+        DisplayMetrics metrics = getResources().getDisplayMetrics();
+
         mPlayPause = (ImageView) v.findViewById(R.id.imageButton3);
         mNext = (ImageView) v.findViewById(R.id.imageButton4);
         mPrev = (ImageView) v.findViewById(R.id.imageButton2);
@@ -203,36 +193,6 @@ public class PlayFragment extends Fragment {
                 }
             }
         });
-
-        mViewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
-            @Override
-            public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
-            }
-
-            @Override
-            public void onPageSelected(int position) {
-                int current = 0;
-                current = MusicUtils.getQueuePosition();
-                if (position - current == 1) {
-                    try {
-                        MusicUtils.mService.pagerNextPlay(current + 1);
-                    } catch (RemoteException e) {
-                        e.printStackTrace();
-                    }
-                } else if (position - current == -1) {
-                    try {
-                        MusicUtils.mService.pagerNextPlay(current - 1);
-                    } catch (RemoteException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-
-            @Override
-            public void onPageScrollStateChanged(int state) {
-            }
-        });
-
         mSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             boolean userTouch;
             @Override
@@ -260,10 +220,14 @@ public class PlayFragment extends Fragment {
             }
         });
         updateNowPlayingInfo();
-        onServiceConnected();
         drawRepeats();
+
+        FrameLayout mLl = (FrameLayout) v.findViewById(R.id.mGesture);
+        mLl.setOnTouchListener(new OnSwipeTouchListener(getActivity(), metrics.density));
+
         return v;
     }
+
 
     @Override
     public void onAttach(Activity activity) {
@@ -278,12 +242,6 @@ public class PlayFragment extends Fragment {
     @Override
     public void onDetach() {
         super.onDetach();
-    }
-
-    private void onServiceConnected() {
-        mALbumArtAdapter.setLength(MusicUtils.getQueueSize());
-        mALbumArtAdapter.notifyDataSetChanged();
-        mViewPager.setCurrentItem(MusicUtils.getQueuePosition());
     }
 
     private void updatePlayingDraw() {
@@ -301,7 +259,7 @@ public class PlayFragment extends Fragment {
     private void drawRepeats(){
         try {
             mRepeat.setImageResource(MusicUtils.mService.getRepeatMode() == 1 ?  R.drawable.ic_repeat : R.drawable.ic_repea_stop);
-            mShuffle.setImageResource(MusicUtils.mService.getShuffleMode() == 0? R.drawable.ic_shufeel : R.drawable.shuffle_stop);
+            mShuffle.setImageResource(MusicUtils.mService.getShuffleMode() == 0 ? R.drawable.shuffle_stop : R.drawable.ic_shufeel);
         } catch (RemoteException e) {
             e.printStackTrace();
         }
@@ -309,6 +267,8 @@ public class PlayFragment extends Fragment {
 
     private void updateNowPlayingInfo() {
         try {
+            String path = MusicUtils.mService.getAlbumArt();
+            ImageLoader.getInstance().displayImage("file:///" + path, mViewPagerImage);
             tvTitle.setText(MusicUtils.mService.getTrackName());
             tvArtist.setText(MusicUtils.mService.getArtistName());
             mDuration = MusicUtils.mService.duration();
@@ -326,14 +286,111 @@ public class PlayFragment extends Fragment {
         public void onReceive(final Context context, final Intent intent) {
             String action = intent.getAction();
             if (action.equals(IMusicChild.META_CHANGED)) {
-                mViewPager.setCurrentItem(MusicUtils.getQueuePosition(), true);
+                String path = null;
+                try {
+                    path = "file:///" + MusicUtils.mService.getAlbumArt();
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+                ImageLoader.getInstance().displayImage(path, mViewPagerImage);
                 updateNowPlayingInfo();
             } else if (action.equals(IMusicChild.Queue_Changed)) {
-                mALbumArtAdapter = new AlbumArt_Pager_Adapter(getFragmentManager(), getActivity());
-                mALbumArtAdapter.setLength(MusicUtils.getQueueSize());
-                mViewPager.setAdapter(mALbumArtAdapter);
-                mViewPager.setCurrentItem(MusicUtils.getQueuePosition());
+                String path = null;
+                try {
+                    path = "file:///" + MusicUtils.mService.getAlbumArt();
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+                ImageLoader.getInstance().displayImage(path, mViewPagerImage);
             }
+        }
+    }
+
+    public class OnSwipeTouchListener implements View.OnTouchListener {
+
+        private final GestureDetector gestureDetector;
+        private int SWIPE_THRESHOLD = 100;
+
+        public OnSwipeTouchListener (Context ctx, float pix){
+            SWIPE_THRESHOLD = ((int) Math.round(pix * 25));
+            gestureDetector = new GestureDetector(ctx, new GestureListener());
+        }
+
+        @Override
+        public boolean onTouch(View v, MotionEvent event) {
+            return gestureDetector.onTouchEvent(event);
+        }
+
+        private final class GestureListener extends GestureDetector.SimpleOnGestureListener {
+            private static final int SWIPE_VELOCITY_THRESHOLD = 800;
+
+            @Override
+            public boolean onDown(MotionEvent e) {
+                return true;
+            }
+
+            @Override
+            public boolean onSingleTapConfirmed(MotionEvent e) {
+                //onSingle();
+                return super.onSingleTapConfirmed(e);
+            }
+
+            @Override
+            public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+                boolean result = false;
+
+                try {
+                    float diffY = e2.getY() - e1.getY();
+                    float diffX = e2.getX() - e1.getX();
+                    if (Math.abs(diffX) > Math.abs(diffY)) {
+                        if (Math.abs(diffX) > SWIPE_THRESHOLD && Math.abs(velocityX) > SWIPE_VELOCITY_THRESHOLD) {
+                            if (diffX > 0) {
+                                onSwipeRight();
+                            } else {
+                                onSwipeLeft();
+                            }
+                        }
+                        result = true;
+                    }
+                    else if (Math.abs(diffY) > SWIPE_THRESHOLD && Math.abs(velocityY) > SWIPE_VELOCITY_THRESHOLD) {
+                        if (diffY > 0) {
+                            onSwipeBottom();
+                        } else {
+                            onSwipeTop();
+                        }
+                    }
+                    result = true;
+
+                } catch (Exception exception) {
+                    exception.printStackTrace();
+                }
+                return result;
+            }
+        }
+
+        public void onSwipeRight() {
+            Toast.makeText(getActivity(), "right", Toast.LENGTH_LONG).show();
+            try {
+                MusicUtils.mService.goToPrev();
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+
+        public void onSwipeLeft() {
+            Toast.makeText(getActivity(), "right", Toast.LENGTH_LONG).show();
+
+            try {
+                MusicUtils.mService.goToNext();
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+
+        public void onSwipeTop() {
+        }
+
+        public void onSwipeBottom() {
         }
     }
 }

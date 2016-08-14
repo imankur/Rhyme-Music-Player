@@ -1,16 +1,32 @@
 <resources>
 
-    <!-- Base application theme. -->
     <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
-        <!-- Customize your theme here. -->
         <item name="colorPrimary">@color/primary</item>
         <item name="colorPrimaryDark">@color/primary_dark</item>
         <item name="colorAccent">@color/accent</item>
         <item name="windowActionModeOverlay">true</item>
         <item name="android:actionModeBackground">@color/primary_dark</item>
-
+        <item name="mainBottomBarColor">@color/primary</item>
+        <item name="mainBodyColor">@color/icons</item>
+        <item name="listItemColor1">@color/textColorLight</item>
+        <item name="rowDividerColor">@color/divider</item>
+        <item name="defaultImage">@drawable/default_artwork</item>
+        <item name="rowSetting">@drawable/ic_more_vert_black_24dp</item>
     </style>
 
+    <style name="AppTheme.Dark" parent="Theme.AppCompat.NoActionBar">
+        <item name="colorPrimary">@color/dark_primary</item>
+        <item name="colorPrimaryDark">@color/dark_primary_dark</item>
+        <item name="colorAccent">@color/accent</item>
+        <item name="windowActionModeOverlay">true</item>
+        <item name="android:actionModeBackground">@color/dark_primary</item>
+        <item name="mainBottomBarColor">@color/dark_primary</item>
+        <item name="mainBodyColor">@color/mainBody</item>
+        <item name="listItemColor1">@android:color/white</item>
+        <item name="rowDividerColor">@color/dark_divider</item>
+        <item name="defaultImage">@drawable/default_artwork_light</item>
+        <item name="rowSetting">@drawable/ic_more_vert_white_24dp</item>
+    </style>
 
     <style name="AppThemeTrans" parent="Theme.AppCompat.Light.NoActionBar">
         <item name="android:actionBarStyle">@style/ThemeActionBar</item>
@@ -22,33 +38,23 @@
         <item name="windowActionBarOverlay">true</item>
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
-
-
     </style>
 
     <style name="ThemeActionBar" parent="Widget.AppCompat.Light.ActionBar.Solid">
         <item name="android:background">@null</item>
-        <!-- Support library compatibility -->
         <item name="background">@null</item>
     </style>
 
     <style name="CustomActionBar" parent="@style/ThemeOverlay.AppCompat.Dark.ActionBar">
         <item name="android:windowActionBarOverlay">true</item>
-        <!-- Support library compatibility -->
         <item name="windowActionBarOverlay">true</item>
     </style>
 
     <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
-
     <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
-
     <style name="AppCompatAlertDialogStyle" parent="Theme.AppCompat.Light.Dialog.Alert">
-
         <item name="android:titleTextColor">#404045</item>
         <item name="android:background">@android:color/white</item>
         <item name="android:padding">4dp</item>
-
     </style>
-
-
 </resources>

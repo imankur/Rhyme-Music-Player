@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.RemoteException;
@@ -12,6 +13,7 @@ import android.support.v4.app.Fragment;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -28,9 +30,6 @@ import java.util.ArrayList;
 
 import mp.ajapps.musicplayerfree.Adapters.TrackPagerAdap;
 import mp.ajapps.musicplayerfree.Fragments.NowPlayingListFragment;
-import mp.ajapps.musicplayerfree.Fragments.PlaylistFragment;
-import mp.ajapps.musicplayerfree.Fragments.RecentFragment;
-import mp.ajapps.musicplayerfree.Fragments.TrackFragment;
 import mp.ajapps.musicplayerfree.Helpers.BitmapUtils;
 import mp.ajapps.musicplayerfree.Helpers.MusicUtils;
 import mp.ajapps.musicplayerfree.R;
@@ -52,25 +51,14 @@ public class Play_Activity extends AppCompatActivity {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             toolbar.setPadding(0, getStatusBarHeight(), 0, 0);
         }
-        Toast.makeText(this, "" + toolbar.getHeight(), Toast.LENGTH_LONG).show();
-
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         ll = (ImageView) findViewById(R.id.myll);
-        //   getSupportActionBar().setHomeButtonEnabled(true);
-        /*android.support.v7.app.ActionBar ab= getSupportActionBar();
-        ab.setDisplayHomeAsUpEnabled(true);*/
-        // Toolbar toolbar = (Toolbar) findViewById(R.id.play_tool);
-        // setSupportActionBar(toolbar);
         MusicUtils.initImageCacher(this);
         updateBlur();
         mPager = (ViewPager) findViewById(R.id.mViewp);
         ArrayList<Fragment> fragments = new ArrayList<Fragment>();
-        //  fragments.add(SuggestFragment.newInstance());
         fragments.add(PlayFragment.newInstance());
-        //fragments.add(TrackFragment.newInstance());
-        //fragments.add(AlbumFragment.newInstance());
-
         fragments.add(new NowPlayingListFragment());
         mPagerAdap = new TrackPagerAdap(getSupportFragmentManager(), fragments);
         mPager.setAdapter(mPagerAdap);
@@ -84,7 +72,6 @@ public class Play_Activity extends AppCompatActivity {
             }
 
         });
-
     }
 
     private void doUpdate () {
@@ -115,10 +102,10 @@ public class Play_Activity extends AppCompatActivity {
                 finish();
                 return true;
             case R.id.action_shuffle:
-                this.updateShuffle(item);
+               // this.updateShuffle(item);
                 return true;
             case R.id.action_repeat:
-                this.updateRepeat(item);
+                //this.updateRepeat(item);
                 return true;
         }
         return super.onOptionsItemSelected(item);
@@ -128,29 +115,7 @@ public class Play_Activity extends AppCompatActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_play, menu);
-        MenuItem mSHuffle = menu.findItem(R.id.action_shuffle);
-        // updateShuffle(mSH);
         return true;
-    }
-
-    public void updateShuffle(MenuItem item) {
-        try {
-            int status = MusicUtils.mService.toggleRepeat();
-            String s = status == 1 ? "Stop Shuffling" : "Start Shuffling";
-            item.setTitle(s);
-        } catch (RemoteException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void updateRepeat(MenuItem item) {
-        try {
-            int status = MusicUtils.mService.toggleShuffle();
-            String s = status == 1 ? "Stop Repeating" : "Start Repeating";
-            item.setTitle(s);
-        } catch (RemoteException e) {
-            e.printStackTrace();
-        }
     }
 
     private void updateBlur() {

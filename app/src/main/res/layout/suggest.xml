@@ -9,7 +9,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:padding="8dp"
-        android:textColor="#2d2d2d"
+        android:textColor="?attr/listItemColor1"
         android:textSize="16sp"
         android:layout_marginLeft="4dp"
         android:id="@+id/title1" />
@@ -19,10 +19,9 @@
         android:text=""
         android:textSize="18sp"
         android:paddingLeft="14dp"
-        android:textColor="#2d2d2d"
+        android:textColor="?attr/listItemColor1"
         android:layout_toRightOf="@id/title1"
         android:id="@+id/title" />
-
     <TextView
         android:layout_width="wrap_content"
         android:layout_below="@id/title"
@@ -32,15 +31,12 @@
         android:layout_toRightOf="@id/title1"
         android:textSize="15sp"
         android:id="@+id/imageButton" />
-
     <ImageView
         android:id="@+id/song_item_menu"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentRight="true"
-
         android:padding="5dp"
-        android:src="@drawable/abc_ic_menu_moreoverflow_mtrl_alpha"
+        android:src="?attr/rowSetting"
         android:theme="@style/Theme.AppCompat" />
-
 </RelativeLayout>

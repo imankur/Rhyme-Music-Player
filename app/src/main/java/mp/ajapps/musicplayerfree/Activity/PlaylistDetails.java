@@ -47,8 +47,6 @@ long mId;
         mAdpt = new Album_Details_Adapter(this);
         mList.setLayoutManager(mLayoutManager);
         mList.setAdapter(mAdpt);
-        mList.addItemDecoration(new SimpleDividerItemDecoration(this, 80));
-
     }
     public int getStatusBarHeight() {
         int result = 0;
@@ -65,30 +63,14 @@ long mId;
             mSelection.append(" AND " + MediaStore.Audio.AudioColumns.TITLE + " != ''");
         return  new CursorLoader(this, MediaStore.Audio.Playlists.Members.getContentUri("external", mId),
                 new String[] {
-                        /* 0 */
                         MediaStore.Audio.Playlists.Members._ID,
-                        /* 1 */
-                        MediaStore.Audio.Playlists.Members.AUDIO_ID,
-                        /* 2 */
                         MediaStore.Audio.AudioColumns.TITLE,
-                        /* 3 */
                         MediaStore.Audio.AudioColumns.ARTIST,
-                        /* 4 */
-                        MediaStore.Audio.AudioColumns.ALBUM_ID,
-                        /* 5 */
-                        MediaStore.Audio.AudioColumns.ALBUM,
-                        /* 6 */
-                        MediaStore.Audio.AudioColumns.DURATION,
-                        /* 7 */
-                        MediaStore.Audio.AudioColumns.YEAR,
-                        /* 8 */
-                        MediaStore.Audio.Playlists.Members.PLAY_ORDER,
                 }, mSelection.toString(), null, MediaStore.Audio.Playlists.Members.DEFAULT_SORT_ORDER);
     }
 
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
-        Log.i("----", "onLoadFinished: "  + data.getCount());
         if(mCursor != null) {
             mCursor.close();
             mCursor = null;

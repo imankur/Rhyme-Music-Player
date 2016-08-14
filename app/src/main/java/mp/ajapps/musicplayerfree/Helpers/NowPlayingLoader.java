@@ -18,7 +18,6 @@ import mp.ajapps.musicplayerfree.POJOS.Song;
 public class NowPlayingLoader extends AsyncTaskLoader<List<Song>> {
     private long [] mNowPlaying;
     private ArrayList<Song> mSongList;
-    private final ExeTimeCalculator etc = new ExeTimeCalculator();
     private final ArrayList<Long> mSongIndexList = new ArrayList<>();
     public NowPlayingLoader (Context context) {
         super(context);
@@ -35,7 +34,6 @@ public class NowPlayingLoader extends AsyncTaskLoader<List<Song>> {
         return getDataFromCursor(makeNowPlayingCursor());
     }
     private Cursor makeNowPlayingCursor() {
-        etc.addTimeFrame("A");
         mNowPlaying = null;
         final StringBuilder selection = new StringBuilder();
         selection.append(MediaStore.Audio.Media._ID + " IN (");
@@ -72,7 +70,7 @@ public class NowPlayingLoader extends AsyncTaskLoader<List<Song>> {
                 final long id = mCursor.getLong(0);
                 final String songName = mCursor.getString(1);
                 final String album = mCursor.getString(2);
-                final Song song = new Song(id, songName,album);
+                final Song song = new Song(id, songName,album,0);
                 int o = mSongIndexList.indexOf(id);
                 mSongList.set(o, song);
             } while (mCursor.moveToNext());

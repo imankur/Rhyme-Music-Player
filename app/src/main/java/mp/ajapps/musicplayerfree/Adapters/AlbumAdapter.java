@@ -23,8 +23,11 @@ import com.nostra13.universalimageloader.core.display.RoundedBitmapDisplayer;
 import com.nostra13.universalimageloader.core.listener.SimpleImageLoadingListener;
 
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 
 import mp.ajapps.musicplayerfree.Activity.Album_Details;
+import mp.ajapps.musicplayerfree.POJOS.AlbumModel;
+import mp.ajapps.musicplayerfree.POJOS.Song;
 import mp.ajapps.musicplayerfree.R;
 
 /**
@@ -32,12 +35,8 @@ import mp.ajapps.musicplayerfree.R;
  */
 public class AlbumAdapter extends RecyclerView.Adapter<AlbumAdapter.ViewHolder> {
     Context context;
-    Cursor mCursor;
     DisplayImageOptions options;
-    private int mAlbumIdx;
-    private int mArtistIdx;
-    private int mAlbumArtIndex;
-    private int mID;
+    private ArrayList<AlbumModel> mList = new ArrayList<>();
 
     public AlbumAdapter (Context context) {
         this.context = context;
@@ -53,18 +52,14 @@ public class AlbumAdapter extends RecyclerView.Adapter<AlbumAdapter.ViewHolder> 
     @Override
     public void onBindViewHolder(AlbumAdapter.ViewHolder holder, int position) {
         holder.image.setImageResource(R.drawable.default_artwork);
-        this.mCursor.moveToPosition(position);
-        final String mArt = this.mCursor.getString(mAlbumArtIndex);
-        final long id = mCursor.getLong(mID);
-        final String mAlbum = mCursor.getString(mAlbumIdx);
-        final String mArtist = mCursor.getString(mArtistIdx);
-        ImageLoader.getInstance().displayImage("file:///" + mArt, holder.image, options);
-        holder.malbumArtist.setText(this.mCursor.getString(mArtistIdx));
-        holder.malbumName.setText(mAlbum);
+        final AlbumModel mModel = mList.get(position);
+        ImageLoader.getInstance().displayImage("file:///" + mModel.mArt, holder.image, options);
+        holder.malbumArtist.setText(mModel.mArtistName);
+        holder.malbumName.setText(mModel.mAlbumName);
         holder.v.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                callDetails(id, mAlbum, mArtist, mArt);
+                callDetails(mModel.mAlbumId, mModel.mAlbumName, mModel.mArtistName, mModel.mArt);
             }
         });
     }
@@ -82,7 +77,7 @@ public class AlbumAdapter extends RecyclerView.Adapter<AlbumAdapter.ViewHolder> 
 
     @Override
     public int getItemCount() {
-        return (mCursor == null) ? 0 : mCursor.getCount();
+        return (mList == null) ? 0 : mList.size();
     }
 
     class ViewHolder extends RecyclerView.ViewHolder{
@@ -91,40 +86,27 @@ public class AlbumAdapter extends RecyclerView.Adapter<AlbumAdapter.ViewHolder> 
         TextView malbumName, malbumArtist;
         public ViewHolder(View itemView) {
             super(itemView);
-            v =itemView;
+            v = itemView;
             this.image = (ImageView) itemView.findViewById(R.id.image);
             this.malbumArtist = (TextView) itemView.findViewById(R.id.album_artist);
             this.malbumName = (TextView) itemView.findViewById(R.id.album_name);
         }
     }
 
-    private void getColumnIndices(Cursor cursor) {
-        if (cursor != null) {
-            mAlbumIdx = cursor.getColumnIndexOrThrow(MediaStore.Audio.Albums.ALBUM);
-            mArtistIdx = cursor.getColumnIndexOrThrow(MediaStore.Audio.Albums.ARTIST);
-            mAlbumArtIndex = cursor.getColumnIndexOrThrow(MediaStore.Audio.Albums.ALBUM_ART);
-            mID = cursor.getColumnIndexOrThrow(BaseColumns._ID);
-        }
-    }
 
     public void changeCursor(Cursor cursor) {
-        Cursor old = swapCursor(cursor);
-        if (old != null) {
-            old.close();
-        }
-    }
-
-    public Cursor swapCursor(Cursor cursor) {
-        if (mCursor == cursor) {
-            return null;
-        }
-
-        getColumnIndices(cursor);
-        Cursor oldCursor = mCursor;
-        this.mCursor = cursor;
         if (cursor != null) {
+            int mAlbumIdx = cursor.getColumnIndexOrThrow(MediaStore.Audio.Albums.ALBUM);
+            int mArtistIdx = cursor.getColumnIndexOrThrow(MediaStore.Audio.Albums.ARTIST);
+            int mAlbumArtIndex = cursor.getColumnIndexOrThrow(MediaStore.Audio.Albums.ALBUM_ART);
+            int mID = cursor.getColumnIndexOrThrow(BaseColumns._ID);
+
+            while (cursor.moveToNext()) {
+                mList.add(new AlbumModel(cursor.getLong(mID), cursor.getString(mAlbumIdx), cursor.getString(mArtistIdx), cursor.getString(mAlbumArtIndex)));
+            }
             this.notifyDataSetChanged();
+
         }
-        return oldCursor;
     }
+
 }

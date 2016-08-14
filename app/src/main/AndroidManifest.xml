@@ -20,7 +20,7 @@
         android:theme="@style/AppTheme">
         <activity
             android:name=".Activity.MainActivity"
-            android:label="@string/toolbar_title">
+            android:label="@string/app_name">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -51,7 +51,8 @@
             android:label="@string/title_activity_album__details"
             android:theme="@style/AppThemeTrans" />
         <activity android:name=".Activity.SearchActivity" />
-        <activity android:name=".Activity.PlaylistDetails" />
+        <activity android:name=".Activity.PlaylistDetails"
+            android:theme="@style/AppTheme"/>
         <activity
             android:name=".Activity.SuggestionDetails"
             android:label="@string/title_activity_suggestion_details"

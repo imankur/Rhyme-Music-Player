@@ -193,8 +193,6 @@ public class SuggestionFragment extends Fragment implements LoaderManager.Loader
             }
         }
 
-
-
         @Override
         public int getItemCount() {
             return mData.size();

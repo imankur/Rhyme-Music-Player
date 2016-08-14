@@ -109,7 +109,7 @@ public class AlbumFragment extends Fragment implements LoaderCallbacks<Cursor> {
                         ImageLoader.getInstance().pause();
                         break;
                     case RecyclerView.SCROLL_STATE_SETTLING:
-                        ImageLoader.getInstance().pause();
+                        ImageLoader.getInstance().resume();
                         break;
                 }
             }

@@ -4,12 +4,14 @@ package mp.ajapps.musicplayerfree.Fragments;
 
 import android.os.Build;
 import android.os.Bundle;
+import android.os.RemoteException;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.Loader;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.helper.ItemTouchHelper;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import mp.ajapps.musicplayerfree.Adapters.DndAdapter;
+import mp.ajapps.musicplayerfree.Helpers.MusicUtils;
 import mp.ajapps.musicplayerfree.Helpers.NowPlayingLoader;
 import mp.ajapps.musicplayerfree.Helpers.OnStartDragListener;
 import mp.ajapps.musicplayerfree.Helpers.SimpleItemTouchHelperCallback;
@@ -39,6 +42,7 @@ public class NowPlayingListFragment extends Fragment implements LoaderManager.Lo
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+        Log.i("kiss", "onCreateView: ");
         View v = inflater.inflate(R.layout.fragment_now_playing_list, container, false);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             v.setPadding(0, getStatusBarHeight(), 0, 0);
@@ -79,6 +83,11 @@ public class NowPlayingListFragment extends Fragment implements LoaderManager.Lo
         for (final Song song : data) { mSongs.add(song); }
         mAdapter.changeCursor(mSongs);
         mAdapter.notifyDataSetChanged();
+        try {
+            mList.scrollToPosition(MusicUtils.mService.getQueuePosition() - 2);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override

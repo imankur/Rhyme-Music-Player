@@ -25,7 +25,7 @@
         android:textAppearance="?android:attr/textAppearanceMedium"
         android:text="Medium Text"
         android:id="@+id/textView12"
-        android:textColor="#2d2d2d"
+        android:textColor="?attr/listItemColor1"
         android:paddingBottom="6dp"
         android:singleLine="true"
         android:layout_alignParentTop="true" />

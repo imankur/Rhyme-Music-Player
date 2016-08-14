@@ -1,8 +1,16 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools" tools:context=".MainActivity">
+
+    <item android:id="@+id/action_toggletheme" android:title="@string/action_theme"
+        android:orderInCategory="100" app:showAsAction="never" android:checkable="true" />
+
+    <item android:id="@+id/action_set_stayOn" android:title="@string/action_stayon"
+        android:orderInCategory="200" app:showAsAction="never" android:checkable="true" />
     <item android:id="@+id/action_settings" android:title="@string/action_exit"
-        android:orderInCategory="100" app:showAsAction="never" />
+    android:orderInCategory="200" app:showAsAction="never" />
+
+
     <item
         android:id="@+id/action_search"
         android:icon="@drawable/ic_menu_search_mtrl_alpha"
@@ -13,11 +21,4 @@
         android:icon="@drawable/ic_av_shuffle"
         android:title="Shuffle"
         app:showAsAction="always" />
-    <item
-        android:id="@+id/action_playlist"
-        android:icon="@drawable/ic_content_add"
-        android:title="Add Playlist"
-        android:visible="false"
-        app:showAsAction="always" />
-
 </menu>

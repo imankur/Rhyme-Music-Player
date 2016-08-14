@@ -6,6 +6,6 @@
 
         android:height="1px" />
 
-    <solid android:color="#b2b3b3" />
+    <solid android:color="?attr/rowDividerColor" />
 
 </shape>

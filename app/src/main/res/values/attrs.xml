@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <attr name="backgroundColor" format="color"/>
+    <attr name="mainBottomBarColor" format="color"/>
+    <attr name="mainBodyColor" format="color"/>
+    <attr name="listItemColor1" format="color"/>
+    <attr name="rowDividerColor" format="color"/>
+    <attr name="defaultImage" format="reference"/>
+    <attr name="rowSetting" format="reference"/>
+</resources>

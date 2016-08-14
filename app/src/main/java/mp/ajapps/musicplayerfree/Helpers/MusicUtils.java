@@ -49,9 +49,7 @@ public class MusicUtils {
     private static ContentValues[] mContentValuesCache = null;
 
     public static void setAndPLay(long[] list, int pos) throws RemoteException {
-        Log.i("boom", "setAndPLay: " + list.length + "---=-" + pos);
         mService.setAndPlay(list, pos);
-
     }
 
     public static void setAndPlay(Cursor c, int pos) {
@@ -180,6 +178,8 @@ public class MusicUtils {
     }
 
     public static long[] getSongListForCursor(Cursor cursor) {
+        ExeTimeCalculator exeTimeCalculator = new ExeTimeCalculator();
+        exeTimeCalculator.addTimeFrame("A");
         if (cursor == null) {
             return sEmptyList;
         }
@@ -196,6 +196,8 @@ public class MusicUtils {
             list[i] = cursor.getLong(colidx);
             cursor.moveToNext();
         }
+        exeTimeCalculator.addTimeFrame("B");
+        exeTimeCalculator.printDifference();
         return list;
     }
 
@@ -282,16 +284,15 @@ public class MusicUtils {
     }
 
     @SuppressLint("NewApi")
-    public static <T> void execute(final boolean forceSerial, final AsyncTask<T, ?, ?> task,
-                                   final T... args) {
+    public static <T> void execute(final boolean forceSerial, final AsyncTask<T, ?, ?> task) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.DONUT) {
             throw new UnsupportedOperationException(
                     "This class can only be used on API 4 and newer.");
         }
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB || forceSerial) {
-            task.execute(args);
+            task.execute();
         } else {
-            task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, args);
+            task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
         }
     }
 
@@ -300,7 +301,8 @@ public class MusicUtils {
         DisplayImageOptions options;
         options = new DisplayImageOptions.Builder()
                 .cacheInMemory(true)
-                .showImageOnLoading(android.R.color.black)
+                .showImageForEmptyUri(R.drawable.default_artwork)
+                .showImageOnFail(R.drawable.default_artwork)
                 .cacheOnDisk(true)
                 .build();
 
